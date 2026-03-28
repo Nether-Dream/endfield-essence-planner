@@ -2,7 +2,7 @@ window.WEAPONS = [
   // 六星
   { name: "望乡", rarity: 6, type: "手铳", s1: "敏捷提升", s2: "寒冷伤害提升", s3: "压制" },
   { name: "光荣记忆", rarity: 6, type: "单手剑", s1: "敏捷提升", s2: "暴击率提升", s3: "夜幕" },
-  { name: "狼之绯", short: "洛茜专武", chars: ["洛茜"], rarity: 6, type: "单手剑", isPreview: true, s1: "", s2: "", s3: "" },
+  { name: "狼之绯", short: "洛茜专武", chars: ["洛茜"], rarity: 6, type: "单手剑", isPreview: false, s1: "敏捷提升", s2: "暴击率提升", s3: "切骨" },
   { name: "落草", short: "汤汤专武", chars: ["汤汤"], rarity: 6, type: "手铳", s1: "敏捷提升", s2: "攻击提升", s3: "迸发" },
   { name: "不知归", short: "骏卫专武", chars: ["骏卫"], rarity: 6, type: "单手剑", s1: "意志提升", s2: "攻击提升", s3: "流转" },
   { name: "热熔切割器", short: "泛用最强拐", rarity: 6, type: "单手剑", s1: "意志提升", s2: "攻击提升", s3: "流转" },

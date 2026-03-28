@@ -30,8 +30,8 @@
         --z-index-base: 1;
         --z-index-back-to-top: 1000;
         --z-index-tutorial: 1100;
-        --z-index-update-toast: 1200;
-        --z-index-toast: 1300;
+        --z-index-update-toast: 2300;
+        --z-index-toast: 2400;
         --z-index-modal-mask: 2000;
         --z-index-modal: 2100;
         --z-index-overlay-high: 2200;
@@ -669,6 +669,574 @@
       .notice-button:hover {
         border-color: rgba(255, 190, 120, var(--alpha-60));
         background: rgba(45, 30, 15, var(--alpha-70));
+      }
+
+      .login-button {
+        border-color: rgba(184, 228, 240, var(--alpha-78));
+        background: rgba(14, 32, 46, var(--alpha-96));
+        color: #eaf6ff;
+        font-weight: 700;
+        box-shadow: 0 8px 20px rgba(6, 14, 24, var(--alpha-48));
+      }
+
+      .login-button:hover {
+        border-color: rgba(204, 234, 242, var(--alpha-88));
+        background: rgba(20, 43, 60, var(--alpha-100));
+      }
+
+      .profile-entry-button {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        max-width: min(220px, 42vw);
+      }
+
+      .profile-entry-icon,
+      .profile-entry-icon svg {
+        width: 16px;
+        height: 16px;
+        flex: 0 0 auto;
+      }
+
+      .profile-entry-label {
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      .secondary-panel .about-button.secondary-shortcut {
+        padding: 6px 10px;
+        font-size: 11px;
+        letter-spacing: 0.04em;
+        text-transform: none;
+      }
+
+      .sync-card {
+        width: min(700px, 92vw);
+        max-height: min(
+          calc(
+            100vh - (2 * clamp(20px, 4vh, 32px)) - var(--app-safe-top-inset, 0px) - var(--app-safe-bottom-inset, 0px) -
+              var(--viewport-safe-bottom, 0px)
+          ),
+          760px
+        );
+        overflow: hidden;
+      }
+
+      .sync-body {
+        display: grid;
+        gap: 12px;
+        min-height: 0;
+        overflow: auto;
+        overscroll-behavior: contain;
+        scrollbar-gutter: stable;
+        padding-left: 2px;
+        padding-right: 6px;
+      }
+
+      .sync-auth-tabs {
+        display: flex;
+        flex-wrap: nowrap;
+        gap: 8px;
+      }
+
+      .sync-auth-tabs .ghost-button {
+        flex: 1 1 0;
+        min-width: 0;
+        justify-content: center;
+        white-space: nowrap;
+      }
+
+      .sync-auth-field {
+        display: grid;
+        gap: 6px;
+      }
+
+      .sync-auth-feedback-stack {
+        display: grid;
+        gap: 8px;
+      }
+
+      .sync-turnstile-shell {
+        position: relative;
+        min-height: 74px;
+        padding: 10px 12px;
+        border-radius: 12px;
+        border: 1px solid rgba(var(--color-white-rgb), var(--alpha-12));
+        background: rgba(var(--color-white-rgb), var(--alpha-04));
+      }
+
+      .sync-turnstile-shell.is-loading {
+        opacity: var(--alpha-72);
+      }
+
+      .sync-turnstile-shell.is-unavailable {
+        border-color: rgba(var(--color-danger-rgb), var(--alpha-34));
+        background: rgba(var(--color-danger-rgb), var(--alpha-10));
+      }
+
+      .sync-turnstile-shell.is-warning {
+        border-color: rgba(var(--color-warning-rgb), var(--alpha-38));
+        background: rgba(var(--color-warning-rgb), var(--alpha-10));
+      }
+
+      .sync-turnstile-shell.is-error {
+        border-color: rgba(var(--color-danger-rgb), var(--alpha-34));
+        background: rgba(var(--color-danger-rgb), var(--alpha-10));
+      }
+
+      .sync-turnstile-widget {
+        min-height: 52px;
+      }
+
+      .sync-turnstile-placeholder {
+        position: absolute;
+        inset: 10px 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        border-radius: 10px;
+        border: 1px dashed rgba(var(--color-white-rgb), var(--alpha-10));
+        background: rgba(var(--color-white-rgb), var(--alpha-02));
+        color: var(--muted);
+        font-size: 12px;
+        line-height: 1.5;
+        pointer-events: none;
+      }
+
+      .sync-turnstile-placeholder.is-warning {
+        color: #ffe2a8;
+        border-color: rgba(var(--color-warning-rgb), var(--alpha-28));
+        background: rgba(var(--color-warning-rgb), var(--alpha-08));
+      }
+
+      .sync-turnstile-placeholder.is-error {
+        color: #ffd8d8;
+        border-color: rgba(var(--color-danger-rgb), var(--alpha-28));
+        background: rgba(var(--color-danger-rgb), var(--alpha-08));
+      }
+
+      .sync-turnstile-hint {
+        color: var(--muted);
+      }
+
+      .sync-turnstile-hint.is-warning {
+        color: #ffd77a;
+      }
+
+      .sync-turnstile-hint.is-error {
+        color: #ffd8d8;
+      }
+
+      .sync-auth-label {
+        font-size: 12px;
+        font-weight: 700;
+        color: var(--text);
+        letter-spacing: 0.04em;
+      }
+
+      .sync-status-card,
+      .sync-summary-card,
+      .sync-conflict-panel {
+        padding: 10px 12px;
+        border-radius: 12px;
+        border: 1px solid rgba(var(--color-white-rgb), var(--alpha-12));
+        background: rgba(8, 12, 18, var(--alpha-48));
+      }
+
+      .sync-status-line {
+        font-size: 13px;
+        color: var(--text);
+      }
+
+      .sync-status-card {
+        display: grid;
+        gap: 12px;
+        padding: 14px 16px;
+        overflow: visible;
+        background: rgba(8, 12, 18, var(--alpha-48));
+      }
+
+      .sync-summary-card {
+        display: grid;
+        gap: 6px;
+        align-content: start;
+      }
+
+      .sync-conflict-panel {
+        display: grid;
+        gap: 10px;
+        padding: 10px 12px;
+        border-color: rgba(var(--color-warning-rgb), var(--alpha-38));
+        background:
+          linear-gradient(180deg, rgba(var(--color-warning-rgb), var(--alpha-12)), rgba(8, 12, 18, var(--alpha-54)));
+      }
+
+      .sync-conflict-panel > .secondary-label {
+        font-size: 14px;
+        font-weight: 800;
+        letter-spacing: 0.05em;
+        color: #ffe1b0;
+      }
+
+      .sync-conflict-panel > .secondary-hint {
+        font-size: 12px;
+        line-height: 1.6;
+        color: var(--text);
+        opacity: var(--alpha-94);
+      }
+
+      .sync-conflict-columns {
+        gap: 8px;
+      }
+
+      .sync-conflict-column {
+        display: flex;
+        flex-direction: column;
+        align-items: stretch;
+        padding: 10px 11px;
+        gap: 7px;
+        min-height: 100%;
+        border-color: rgba(var(--color-warning-rgb), var(--alpha-24));
+        background: rgba(var(--color-warning-rgb), var(--alpha-06));
+      }
+
+      .sync-conflict-column .secondary-label {
+        font-size: 13px;
+        font-weight: 750;
+        letter-spacing: 0.04em;
+        color: #ffd39b;
+      }
+
+      .sync-conflict-column .secondary-hint {
+        font-size: 12px;
+        line-height: 1.55;
+        color: var(--text);
+        opacity: var(--alpha-90);
+      }
+
+      .sync-conflict-column-actions {
+        justify-content: center;
+        margin-top: auto;
+        padding-top: 6px;
+      }
+
+      .sync-conflict-action {
+        min-width: 0;
+        width: 100%;
+        justify-content: center;
+      }
+
+      .sync-conflict-confirm-overlay {
+        z-index: 610;
+      }
+
+      .sync-conflict-confirm-card {
+        width: min(520px, 92vw);
+      }
+
+      .sync-conflict-confirm-actions {
+        justify-content: flex-end;
+        gap: 10px;
+      }
+
+      .sync-status-hero {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 12px;
+      }
+
+      .sync-status-user-block {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        min-width: 0;
+      }
+
+      .sync-status-avatar {
+        width: 42px;
+        height: 42px;
+        border-radius: 14px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        flex: 0 0 auto;
+        font-size: 18px;
+        font-weight: 800;
+        letter-spacing: 0.04em;
+        color: #effffb;
+        border: 1px solid rgba(var(--color-accent-rgb), var(--alpha-34));
+        background:
+          radial-gradient(circle at 30% 25%, rgba(var(--color-white-rgb), var(--alpha-24)), transparent 58%),
+          rgba(var(--color-accent-rgb), var(--alpha-26));
+      }
+
+      .sync-status-user-copy {
+        min-width: 0;
+        display: grid;
+        gap: 4px;
+      }
+
+      .sync-status-user-name {
+        font-size: 17px;
+        font-weight: 700;
+        line-height: 1.2;
+        color: var(--text);
+        overflow-wrap: anywhere;
+      }
+
+      .sync-status-metrics {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 12px;
+      }
+
+      .sync-status-metric {
+        min-width: 0;
+        display: grid;
+        gap: 4px;
+        padding: 10px 12px;
+        border-radius: 12px;
+        border: 1px solid rgba(var(--color-white-rgb), var(--alpha-10));
+        background: rgba(var(--color-white-rgb), var(--alpha-04));
+      }
+
+      .sync-status-metric-label {
+        font-size: 11px;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--muted);
+      }
+
+      .sync-status-metric-value {
+        font-size: 13px;
+        line-height: 1.6;
+        color: var(--text);
+      }
+
+      .sync-status-metric-value-wrap {
+        overflow-wrap: anywhere;
+      }
+
+      .sync-status-actions {
+        justify-content: flex-end;
+        flex-wrap: nowrap;
+        gap: 8px;
+        padding-top: 2px;
+        padding-inline: 0;
+      }
+
+      .sync-status-actions > .about-button,
+      .sync-status-actions > .ghost-button {
+        margin: 0;
+      }
+
+      .sync-password-panel {
+        display: grid;
+        gap: 8px;
+        padding-top: 8px;
+        border-top: 1px dashed rgba(var(--color-white-rgb), var(--alpha-12));
+      }
+
+      .sync-password-actions {
+        justify-content: flex-end;
+      }
+
+      .sync-status-settings {
+        padding-top: 2px;
+        border-top: 1px dashed rgba(var(--color-white-rgb), var(--alpha-12));
+      }
+
+      .sync-feedback {
+        padding: 10px 12px;
+        border-radius: 10px;
+        font-size: 12px;
+        line-height: 1.6;
+      }
+
+      .sync-status-list {
+        display: grid;
+        gap: 8px;
+        max-height: 176px;
+        overflow-y: auto;
+        overscroll-behavior: contain;
+        scrollbar-gutter: stable;
+        padding-right: 4px;
+      }
+
+      .sync-feedback-entry {
+        display: grid;
+        gap: 6px;
+      }
+
+      .sync-feedback-head {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        min-width: 0;
+      }
+
+      .sync-feedback-dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 999px;
+        background: currentColor;
+        flex: 0 0 auto;
+      }
+
+      .sync-feedback-time {
+        margin-left: auto;
+        font-size: 11px;
+        letter-spacing: 0.08em;
+        opacity: var(--alpha-80);
+      }
+
+      .sync-feedback-text {
+        overflow-wrap: anywhere;
+      }
+
+      .sync-feedback-ok {
+        border: 1px solid rgba(var(--color-ok-rgb), var(--alpha-35));
+        background: rgba(var(--color-ok-rgb), var(--alpha-12));
+        color: rgba(var(--color-ok-rgb), var(--alpha-100));
+      }
+
+      .sync-feedback-error {
+        border: 1px solid rgba(var(--color-danger-rgb), var(--alpha-40));
+        background: rgba(var(--color-danger-rgb), var(--alpha-12));
+        color: #ffd0d0;
+      }
+
+      .sync-feedback-info {
+        border: 1px solid rgba(var(--color-info-rgb), var(--alpha-38));
+        background: rgba(var(--color-info-rgb), var(--alpha-12));
+        color: rgba(var(--color-info-rgb), var(--alpha-100));
+      }
+
+      .sync-feedback-warning {
+        border: 1px solid rgba(var(--color-warning-rgb), var(--alpha-42));
+        background: rgba(var(--color-warning-rgb), var(--alpha-16));
+        color: #ffd7ac;
+      }
+
+      .sync-feedback-empty {
+        border: 1px dashed rgba(var(--color-white-rgb), var(--alpha-14));
+        background: rgba(var(--color-white-rgb), var(--alpha-04));
+        color: var(--muted);
+      }
+
+      .sync-summary-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 10px;
+      }
+
+      .sync-summary-grid.is-single {
+        grid-template-columns: minmax(0, 1fr);
+      }
+
+      .sync-card .notice-skip {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        color: var(--muted);
+        font-size: 12px;
+        line-height: 1.5;
+      }
+
+      .sync-card .notice-skip input {
+        accent-color: var(--accent-2);
+      }
+
+      .sync-dev-panel {
+        border-top: 1px dashed rgba(var(--color-white-rgb), var(--alpha-12));
+        padding-top: 12px;
+      }
+
+      @media (max-width: 720px) {
+        .sync-summary-grid {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+          gap: 8px;
+        }
+
+        .sync-status-hero {
+          flex-direction: column;
+          align-items: stretch;
+        }
+
+        .sync-card .secondary-actions > .about-button,
+        .sync-card .secondary-actions > .ghost-button {
+          flex: 0 0 auto;
+          min-width: 0;
+          max-width: 100%;
+        }
+
+        .sync-card {
+          width: min(700px, 92vw);
+        }
+
+        .sync-status-actions {
+          justify-content: flex-start;
+        }
+      }
+
+      @media (max-width: 560px) {
+        .profile-entry-button {
+          max-width: min(188px, 58vw);
+        }
+
+        .sync-card {
+          width: min(700px, 92vw);
+        }
+
+        .sync-body {
+          gap: 10px;
+        }
+
+        .sync-auth-tabs .ghost-button {
+          padding-inline: 10px;
+          font-size: 12px;
+        }
+
+        .sync-status-metrics {
+          grid-template-columns: 1fr;
+        }
+
+        .sync-status-card {
+          padding: 12px 13px;
+        }
+
+        .sync-card .secondary-item > .secondary-actions {
+          flex-direction: column;
+          align-items: stretch;
+          gap: 6px;
+        }
+
+        .sync-card .secondary-item > .secondary-actions > .about-button,
+        .sync-card .secondary-item > .secondary-actions > .ghost-button {
+          width: 100%;
+          justify-content: center;
+        }
+
+        .sync-card .secondary-item > .sync-status-actions {
+          flex-direction: row;
+          align-items: center;
+          justify-content: flex-end;
+        }
+
+        .sync-card .secondary-item > .sync-status-actions > .about-button,
+        .sync-card .secondary-item > .sync-status-actions > .ghost-button {
+          width: auto;
+          max-width: none;
+          justify-content: center;
+        }
+
+        .sync-status-list {
+          max-height: none;
+        }
       }
 
       .about-button:hover {

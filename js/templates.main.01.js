@@ -52,15 +52,35 @@
               <option value="dark">{{ t("nav.dark") }}</option>
             </select>
           </div>
-          <button class="about-button notice-button" @click="openNotice">{{ t("nav.announcement") }}</button>
-          <button class="about-button" @click="openChangelog">{{ t("nav.changelog") }}</button>
-          <button class="about-button" @click="openFaq">FAQ</button>
-          <button class="about-button" @click="openAbout">{{ t("nav.about") }}</button>
+          <button
+            class="about-button login-button profile-entry-button"
+            :title="syncAuthenticated && syncUser && syncUser.username ? syncUser.username : t('sync.login_action')"
+            @click="openSyncModal"
+          >
+            <span class="profile-entry-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7">
+                <path d="M12 12a4.25 4.25 0 1 0 0-8.5 4.25 4.25 0 0 0 0 8.5Z"></path>
+                <path d="M4.5 20.25a7.5 7.5 0 0 1 15 0"></path>
+              </svg>
+            </span>
+            <span class="profile-entry-label">
+              {{ syncAuthenticated && syncUser && syncUser.username ? syncUser.username : t("sync.login_action") }}
+            </span>
+          </button>
           <div class="secondary-menu">
             <button class="about-button menu-toggle" @click="showSecondaryMenu = !showSecondaryMenu">
-              {{ t("nav.more_settings") }}
+              {{ t("nav.more_tools") }}
             </button>
             <div v-if="showSecondaryMenu" class="secondary-panel">
+              <div class="secondary-item">
+                <div class="secondary-label">{{ t("nav.quick_links") }}</div>
+                <div class="secondary-actions">
+                  <button class="about-button secondary-shortcut" @click="openNotice(); showSecondaryMenu = false">{{ t("nav.announcement") }}</button>
+                  <button class="about-button secondary-shortcut" @click="openChangelog(); showSecondaryMenu = false">{{ t("nav.changelog") }}</button>
+                  <button class="about-button secondary-shortcut" @click="openFaq(); showSecondaryMenu = false">FAQ</button>
+                  <button class="about-button secondary-shortcut" @click="openAbout(); showSecondaryMenu = false">{{ t("nav.about") }}</button>
+                </div>
+              </div>
               <div class="secondary-item">
                 <div class="secondary-label">{{ t("nav.performance_mode") }}</div>
                 <select class="secondary-select" :value="perfPreference" @change="setPerfMode($event.target.value)">
@@ -232,7 +252,7 @@
           {{ t("nav.low_gpu_mode_enabled") }}{{ perfPreference === "auto" ? t("nav.auto_2") : t("nav.manual") }}
         </div>
         <button class="ghost-button" @click.stop="showSecondaryMenu = true">
-          {{ t("nav.more_settings") }}
+          {{ t("nav.more_tools") }}
         </button>
       </div>
       <div v-if="showPerfNotice" class="perf-notice">

@@ -1282,6 +1282,7 @@
     state.customWeapons = customWeaponsRef;
     state.customWeaponDraft = customWeaponDraftRef;
     state.customWeaponError = customWeaponErrorRef;
+    state.sanitizeCustomWeapons = sanitizeCustomWeapons;
     state.addCustomWeapon = addCustomWeapon;
     state.removeCustomWeapon = removeCustomWeapon;
     state.resetCustomWeaponDraft = resetCustomWeaponDraft;

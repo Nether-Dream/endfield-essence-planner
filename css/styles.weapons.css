@@ -1830,7 +1830,9 @@
       .fade-scale-enter-active.about-overlay.about-overlay-main,
       .fade-scale-leave-active.about-overlay.about-overlay-main,
       .fade-scale-enter-active.about-overlay.faq-overlay,
-      .fade-scale-leave-active.about-overlay.faq-overlay {
+      .fade-scale-leave-active.about-overlay.faq-overlay,
+      .fade-scale-enter-active.about-overlay.sync-overlay,
+      .fade-scale-leave-active.about-overlay.sync-overlay {
         transition: opacity 0.28s ease, padding-bottom 0.22s ease;
       }
 

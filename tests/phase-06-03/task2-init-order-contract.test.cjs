@@ -37,6 +37,7 @@ assert.deepEqual(
     "initRecommendationDisplay",
     "initModals",
     "initUpdate",
+    "initSync",
     "initMedia",
     "initStrategy",
     "initEquipRefining",

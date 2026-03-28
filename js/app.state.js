@@ -24,6 +24,7 @@
     state.customWeaponError = ref(null);
     state.showAbout = ref(false);
     state.showFaq = ref(false);
+    state.showSyncModal = ref(false);
     state.showSecondaryMenu = ref(false);
 
     state.contentLoading = ref(false);
@@ -64,6 +65,9 @@
     state.backgroundStorageKey = "planner-bg-image:v1";
     state.backgroundApiStorageKey = "planner-bg-api:v1";
     state.backgroundDisplayStorageKey = "planner-bg-display:v1";
+    state.syncMetaStorageKey = "planner-sync-meta:v1";
+    state.syncPrefsStorageKey = "planner-sync-prefs:v1";
+    state.syncDevStorageKey = "planner-sync-dev:v1";
     state.planConfigHintStorageKey = "planner-plan-config-hint:v1";
     // 更新基质规划设置时递增该版本号，可让红点对所有用户重新显示一次。
     state.planConfigHintVersion = "6";

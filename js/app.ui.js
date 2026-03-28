@@ -142,6 +142,10 @@
       typeof appUtils.triggerJsonDownload === "function"
         ? appUtils.triggerJsonDownload
         : () => {};
+    const collectFrontendDeliveryDiagnostic =
+      typeof appUtils.collectFrontendDeliveryDiagnostic === "function"
+        ? appUtils.collectFrontendDeliveryDiagnostic
+        : async () => null;
     const truncateText = (value, maxLength) => {
       const text = String(value || "");
       if (!text || maxLength <= 0) return "";
@@ -469,6 +473,35 @@
       toastManualPauseMeta.delete(String(noticeId || ""));
       clearToastTimer(noticeId);
       removeVisibleToastNotice(noticeId);
+    };
+    const dismissToastNoticeBySignature = (signature) => {
+      if (!toastNotices) return 0;
+      const signatureText = String(signature || "").trim();
+      if (!signatureText) return 0;
+      const current = Array.isArray(toastNotices.value) ? toastNotices.value : [];
+      const queue = Array.isArray(toastQueue) ? toastQueue : [];
+      const removedIds = [];
+      const nextVisible = current.filter((item) => {
+        const match = String((item && item.signature) || "") === signatureText;
+        if (match && item && item.id) removedIds.push(String(item.id));
+        return !match;
+      });
+      const nextQueue = queue.filter((item) => {
+        const match = String((item && item.signature) || "") === signatureText;
+        if (match && item && item.id) removedIds.push(String(item.id));
+        return !match;
+      });
+      if (!removedIds.length) return 0;
+      removedIds.forEach((id) => {
+        setToastPaused(id, false);
+        toastManualPauseMeta.delete(id);
+        clearToastTimer(id);
+      });
+      toastLastSeenAt.delete(signatureText);
+      setToastQueue(nextQueue);
+      setVisibleToastNotices(nextVisible);
+      fillToastVisibleFromQueue();
+      return removedIds.length;
     };
     const getToastNoticeById = (noticeId) => {
       if (!toastNotices || !noticeId) return null;
@@ -830,8 +863,9 @@
       window.location.replace(url.toString());
     };
 
-    const exportRuntimeDiagnosticBundle = () => {
+    const exportRuntimeDiagnosticBundle = async () => {
       try {
+        const frontendDelivery = await collectFrontendDeliveryDiagnostic();
         const payload = {
           exportedAt: nowIsoString(),
           fingerprint: getAppFingerprint(),
@@ -851,6 +885,7 @@
             state.runtimeWarningPreviewText && typeof state.runtimeWarningPreviewText.value === "string"
               ? state.runtimeWarningPreviewText.value
               : "",
+          frontendDelivery,
         };
         const stamp = nowIsoString().replace(/[^\d]/g, "").slice(0, 14) || String(Date.now());
         triggerJsonDownload(`planner-runtime-diagnostic-${stamp}.json`, payload);
@@ -1313,6 +1348,7 @@
     state.snapshotToastLeaveRects = snapshotToastLeaveRects;
     state.pushToastNotice = pushToastNotice;
     state.dismissToastNotice = dismissToastNotice;
+    state.dismissToastNoticeBySignature = dismissToastNoticeBySignature;
     state.pauseToastNotice = pauseToastNotice;
     state.resumeToastNotice = resumeToastNotice;
     state.isToastNoticePaused = isToastNoticePaused;

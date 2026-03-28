@@ -8,6 +8,9 @@
     if (!state.showFaq) {
       state.showFaq = typeof ref === "function" ? ref(false) : { value: false };
     }
+    if (!state.showSyncModal) {
+      state.showSyncModal = typeof ref === "function" ? ref(false) : { value: false };
+    }
     const reportStorageIssue = (operation, key, error, meta) => {
       if (typeof state.reportStorageIssue === "function") {
         state.reportStorageIssue(operation, key, error, meta);
@@ -88,6 +91,15 @@
       await ensureModalContent(false);
     };
 
+    const openSyncModal = async () => {
+      state.showSyncModal.value = true;
+      await ensureModalContent(false);
+    };
+
+    const closeSyncModal = () => {
+      state.showSyncModal.value = false;
+    };
+
     const closeNotice = () => {
       state.showNotice.value = false;
       const currentVersion = (state.announcement.value || {}).version;
@@ -157,6 +169,7 @@
           state.showChangelog.value ||
         state.showAbout.value ||
         state.showFaq.value ||
+        state.showSyncModal.value ||
           state.showTutorialSkipConfirm.value ||
           state.showStorageErrorModal.value ||
           state.showStorageClearConfirmModal.value ||
@@ -268,6 +281,7 @@
         state.showChangelog,
         state.showAbout,
         state.showFaq,
+        state.showSyncModal,
         state.showTutorialSkipConfirm,
         state.showStorageErrorModal,
         state.showStorageClearConfirmModal,
@@ -279,6 +293,7 @@
         changelogOpen,
         aboutOpen,
         faqOpen,
+        syncOpen,
         skipOpen,
         storageErrorOpen,
         storageClearConfirmOpen,
@@ -290,6 +305,7 @@
             changelogOpen ||
             aboutOpen ||
             faqOpen ||
+            syncOpen ||
             skipOpen ||
             storageErrorOpen ||
             storageClearConfirmOpen ||
@@ -319,6 +335,7 @@
         state.showChangelog,
         state.showAbout,
         state.showFaq,
+        state.showSyncModal,
         state.showDomainWarning,
         state.showStorageErrorModal,
         state.showStorageClearConfirmModal,
@@ -349,6 +366,8 @@
     state.openChangelog = openChangelog;
     state.openAbout = openAbout;
     state.openFaq = openFaq;
+    state.openSyncModal = openSyncModal;
+    state.closeSyncModal = closeSyncModal;
     state.closeNotice = closeNotice;
   };
 })();

@@ -12,8 +12,9 @@
       .about-overlay.notice-overlay,
       .about-overlay.changelog-overlay,
       .about-overlay.about-overlay-main,
-      .about-overlay.faq-overlay {
-        padding-top: clamp(20px, 4vh, 32px);
+      .about-overlay.faq-overlay,
+      .about-overlay.sync-overlay {
+        padding-top: calc(clamp(20px, 4vh, 32px) + var(--app-safe-top-inset, 0px));
         padding-bottom: calc(clamp(20px, 4vh, 32px) + var(--app-safe-bottom-inset, 0px) + var(--viewport-safe-bottom, 0px));
         transition: padding-bottom 0.22s ease;
       }
@@ -1677,7 +1678,7 @@
       .toast-main {
         min-width: 0;
         display: flex;
-        align-items: center;
+        align-items: flex-start;
         gap: 8px;
       }
 
@@ -1705,15 +1706,17 @@
       .toast-text strong {
         font-size: 12px;
         line-height: 1.2;
+        white-space: normal;
+        overflow-wrap: anywhere;
       }
 
       .toast-text span {
         color: #ffe7bf;
         font-size: 11px;
         line-height: 1.25;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
+        white-space: normal;
+        overflow-wrap: anywhere;
+        word-break: break-word;
       }
 
       .toast-actions {
@@ -1751,11 +1754,11 @@
       }
 
       .planner-toast-warning .toast-progress {
-        background: rgba(18, 12, 2, var(--alpha-45));
+        background: rgba(58, 38, 8, var(--alpha-78));
       }
 
       .planner-toast-warning .toast-progress::before {
-        background: rgba(255, 238, 198, var(--alpha-95));
+        background: rgba(255, 194, 82, var(--alpha-98));
       }
 
       .planner-toast-info .toast-card {
@@ -1785,6 +1788,35 @@
 
       .planner-toast-info .toast-progress::before {
         background: rgba(120, 220, 210, var(--alpha-90));
+      }
+
+      .planner-toast-success .toast-card {
+        border-color: rgba(var(--color-ok-rgb), var(--alpha-46));
+        background: rgba(14, 34, 24, var(--alpha-94));
+        color: #ebfff3;
+      }
+
+      .planner-toast-success .toast-icon {
+        border-color: rgba(var(--color-ok-rgb), var(--alpha-58));
+        color: #9df0bf;
+      }
+
+      .planner-toast-success .toast-text span {
+        color: #cdeedb;
+      }
+
+      .planner-toast-success .toast-close-button {
+        border: none;
+        background: transparent;
+        color: #bde8ce;
+      }
+
+      .planner-toast-success .toast-progress {
+        background: rgba(var(--color-ok-rgb), var(--alpha-20));
+      }
+
+      .planner-toast-success .toast-progress::before {
+        background: rgba(var(--color-ok-rgb), var(--alpha-88));
       }
 
       @keyframes toast-progress {
@@ -2139,12 +2171,41 @@
         background: rgba(35, 153, 126, var(--alpha-80));
       }
 
+      [data-theme="light"] .planner-toast-success .toast-card {
+        border-color: rgba(var(--color-ok-rgb), var(--alpha-32));
+        background: rgba(235, 249, 241, var(--alpha-96));
+        color: #1f5d40;
+      }
+
+      [data-theme="light"] .planner-toast-success .toast-icon {
+        border-color: rgba(var(--color-ok-rgb), var(--alpha-38));
+        color: #1f8d5d;
+      }
+
+      [data-theme="light"] .planner-toast-success .toast-text span {
+        color: #39735a;
+      }
+
+      [data-theme="light"] .planner-toast-success .toast-close-button {
+        border: none;
+        background: transparent;
+        color: #2f6d52;
+      }
+
+      [data-theme="light"] .planner-toast-success .toast-progress {
+        background: rgba(var(--color-ok-rgb), var(--alpha-14));
+      }
+
+      [data-theme="light"] .planner-toast-success .toast-progress::before {
+        background: rgba(var(--color-ok-rgb), var(--alpha-74));
+      }
+
       [data-theme="light"] .planner-toast-warning .toast-progress {
-        background: rgba(120, 76, 12, var(--alpha-22));
+        background: rgba(158, 104, 18, var(--alpha-26));
       }
 
       [data-theme="light"] .planner-toast-warning .toast-progress::before {
-        background: rgba(88, 55, 6, var(--alpha-92));
+        background: rgba(124, 68, 6, var(--alpha-96));
       }
 
       [data-theme="light"] .update-version-grid {

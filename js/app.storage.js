@@ -144,6 +144,7 @@
     state.normalizeWeaponMarks = schemaApi.normalizeWeaponMarks;
     state.normalizeLegacyMarks = () => ({});
     state.normalizeRecommendationConfig = schemaApi.normalizeRecommendationConfig;
+    state.sanitizeUiState = schemaApi.sanitizeState;
     state.reportStorageIssue = recoveryApi.reportStorageIssue;
     state.ignoreStorageErrors = recoveryApi.ignoreStorageErrors;
     state.requestIgnoreStorageErrors = recoveryApi.requestIgnoreStorageErrors;

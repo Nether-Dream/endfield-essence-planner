@@ -12,6 +12,10 @@
       typeof appUtils.triggerJsonDownload === "function"
         ? appUtils.triggerJsonDownload
         : () => {};
+    const collectFrontendDeliveryDiagnostic =
+      typeof appUtils.collectFrontendDeliveryDiagnostic === "function"
+        ? appUtils.collectFrontendDeliveryDiagnostic
+        : async () => null;
 
     let reportStorageIssue = () => {};
     const setIssueReporter = (reporter) => {
@@ -150,6 +154,7 @@
         persistenceApi && typeof persistenceApi.readManagedStorageRaw === "function"
           ? persistenceApi.readManagedStorageRaw()
           : {};
+      const frontendDelivery = await collectFrontendDeliveryDiagnostic();
       return {
         exportedAt: nowIsoString(),
         fingerprint: getAppFingerprint(),
@@ -172,6 +177,7 @@
         storageRaw: buildSafeStorageRaw(storageRawSource),
         nonFatalDiagnostics: readNonFatalDiagnosticsHistory(),
         nonFatalDiagnosticsConfig: readNonFatalDiagnosticsConfig(),
+        frontendDelivery,
       };
     };
 
