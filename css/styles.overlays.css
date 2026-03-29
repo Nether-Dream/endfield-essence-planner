@@ -1716,7 +1716,6 @@
         line-height: 1.25;
         white-space: normal;
         overflow-wrap: anywhere;
-        word-break: break-word;
       }
 
       .toast-actions {

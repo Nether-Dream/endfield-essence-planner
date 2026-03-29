@@ -51,25 +51,40 @@
       result.traceError = "fetch_unavailable";
       return result;
     }
+    const fetchWithTimeout = async (url, options, timeoutMs = 5000) => {
+      if (typeof AbortController === "undefined") {
+        return fetch(url, options);
+      }
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+      try {
+        const response = await fetch(url, { ...options, signal: controller.signal });
+        return response;
+      } finally {
+        clearTimeout(timeoutId);
+      }
+    };
+
     try {
-      const response = await fetch(pageUrl || ".", {
+      const response = await fetchWithTimeout(pageUrl || ".", {
         method: "HEAD",
         cache: "no-store",
         credentials: "same-origin",
-      });
+      }, 5000);
       result.server = String(response.headers.get("server") || "").trim();
       if (!response.ok && !result.server) {
         result.serverError = `HTTP ${response.status}`;
       }
     } catch (error) {
-      result.serverError = error && error.message ? String(error.message) : "server_probe_failed";
+      result.serverError = error && error.name === "AbortError" ? "timeout" :
+        error && error.message ? String(error.message) : "server_probe_failed";
     }
     try {
-      const response = await fetch(traceUrl, {
+      const response = await fetchWithTimeout(traceUrl, {
         method: "GET",
         cache: "no-store",
         credentials: "same-origin",
-      });
+      }, 5000);
       const raw = await response.text();
       if (response.ok) {
         result.traceRaw = String(raw || "");
@@ -77,7 +92,8 @@
         result.traceError = raw ? String(raw) : `HTTP ${response.status}`;
       }
     } catch (error) {
-      result.traceError = error && error.message ? String(error.message) : "trace_probe_failed";
+      result.traceError = error && error.name === "AbortError" ? "timeout" :
+        error && error.message ? String(error.message) : "trace_probe_failed";
     }
     return result;
   };

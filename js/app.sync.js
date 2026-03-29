@@ -43,6 +43,7 @@
     let suppressNextConflictToastUntil = 0;
     let syncTurnstileLoadPromise = null;
     let syncTurnstileMountPromise = null;
+    let syncTurnstileMountVersion = 0;
 
     const getRefValue = (target, fallback) =>
       target && typeof target === "object" && "value" in target ? target.value : fallback;
@@ -146,15 +147,21 @@
         showWeaponAttrs:
           typeof source.showWeaponAttrs === "boolean"
             ? source.showWeaponAttrs
-            : false,
+            : useCurrentFallback
+              ? Boolean(getRefValue(state.showWeaponAttrs, false))
+              : false,
         showWeaponOwnership:
           typeof source.showWeaponOwnership === "boolean"
             ? source.showWeaponOwnership
-            : false,
+            : useCurrentFallback
+              ? Boolean(getRefValue(state.showWeaponOwnership, false))
+              : false,
         showAllSchemes:
           typeof source.showAllSchemes === "boolean"
             ? source.showAllSchemes
-            : false,
+            : useCurrentFallback
+              ? Boolean(getRefValue(state.showAllSchemes, false))
+              : false,
       };
       if (typeof state.sanitizeUiState === "function") {
         return state.sanitizeUiState(candidate) || {};
@@ -188,16 +195,7 @@
     const normalizeDurableComparableData = (raw, options) => {
       const comparable = normalizeComparableData(raw, options);
       const workspace = isPlainObject(comparable.workspace) ? comparable.workspace : {};
-      comparable.workspace = Object.assign({}, workspace, {
-        selectedNames: [],
-        filterS1: [],
-        filterS2: [],
-        filterS3: [],
-        equipRefiningSelectedName: "",
-        showWeaponAttrs: false,
-        showWeaponOwnership: false,
-        showAllSchemes: false,
-      });
+      comparable.workspace = Object.assign({}, workspace);
       return comparable;
     };
 
@@ -313,7 +311,21 @@
 
     const hasMeaningfulLocalData = (payload) => {
       const summary = summarizePayload(payload, 0, "");
-      return summary.marksCount > 0 || summary.customWeaponsCount > 0 || summary.selectedCount > 0;
+      if (summary.marksCount > 0 || summary.customWeaponsCount > 0 || summary.selectedCount > 0) {
+        return true;
+      }
+      const comparable = normalizeComparableData(payload);
+      const workspace = comparable.workspace || {};
+      if (workspace.recommendationConfig && Object.keys(workspace.recommendationConfig).length > 0) {
+        return true;
+      }
+      if (workspace.schemeBaseSelections && Object.keys(workspace.schemeBaseSelections).length > 0) {
+        return true;
+      }
+      if (workspace.weaponAttrOverrides && Object.keys(workspace.weaponAttrOverrides).length > 0) {
+        return true;
+      }
+      return false;
     };
 
     const readJsonStorage = (key, fallback) => {
@@ -404,8 +416,7 @@
           summary: getSyncText("sync.session_expired_summary", "点击这里重新打开登录面板。"),
           tone: "warning",
           icon: "!",
-          actionLabel: getSyncText("sync.login_action", "登录"),
-          action: typeof state.openSyncModal === "function" ? () => state.openSyncModal() : null,
+          onActivate: typeof state.openSyncModal === "function" ? () => state.openSyncModal() : null,
           durationMs: 9000,
           signature: "sync-session-expired",
           ariaLabel: getSyncText("sync.session_expired_title", "登录状态已失效"),
@@ -736,6 +747,7 @@
     };
 
     const destroySyncTurnstileWidget = () => {
+      syncTurnstileMountVersion += 1;
       syncTurnstileMountPromise = null;
       const widgetId = state.syncTurnstileWidgetId && "value" in state.syncTurnstileWidgetId
         ? state.syncTurnstileWidgetId.value
@@ -783,10 +795,12 @@
       if (state.syncFrontendBlocked.value) return;
       if (state.syncTurnstileWidgetId.value != null) return;
       if (syncTurnstileMountPromise) return syncTurnstileMountPromise;
+      const mountVersion = syncTurnstileMountVersion;
       syncTurnstileMountPromise = (async () => {
         if (typeof nextTick === "function") {
           await nextTick();
         }
+        if (mountVersion !== syncTurnstileMountVersion) return;
         const container = state.syncTurnstileRef && "value" in state.syncTurnstileRef
           ? state.syncTurnstileRef.value
           : null;
@@ -803,6 +817,7 @@
         try {
           await loadTurnstileScript();
         } catch (error) {
+          if (mountVersion !== syncTurnstileMountVersion) return;
           state.syncTurnstileLoading.value = false;
           state.syncTurnstileUnavailable.value = true;
           setSyncTurnstileMessage(
@@ -812,6 +827,7 @@
           );
           return;
         }
+        if (mountVersion !== syncTurnstileMountVersion) return;
         if (!isTurnstileApiReady()) {
           state.syncTurnstileLoading.value = false;
           state.syncTurnstileUnavailable.value = true;
@@ -823,6 +839,7 @@
           return;
         }
         try {
+          if (mountVersion !== syncTurnstileMountVersion) return;
           state.syncTurnstileWidgetId.value = window.turnstile.render(container, {
             sitekey: syncTurnstileSiteKey,
             action: syncTurnstileAction,
@@ -898,6 +915,8 @@
         username_taken: "sync.error_username_taken",
         weak_password: "sync.error_weak_password",
         invalid_current_password: "sync.error_invalid_current_password",
+        invalid_reset_code: "sync.error_invalid_reset_code",
+        reset_code_unavailable: "sync.error_reset_code_unavailable",
         password_mismatch: "sync.error_password_mismatch",
         account_disabled: "sync.error_account_disabled",
         unauthorized: "sync.error_unauthorized",
@@ -1222,11 +1241,17 @@
       if (state.syncCurrentPasswordInput && "value" in state.syncCurrentPasswordInput) {
         state.syncCurrentPasswordInput.value = "";
       }
+      if (state.syncResetCodeInput && "value" in state.syncResetCodeInput) {
+        state.syncResetCodeInput.value = "";
+      }
       if (state.syncNewPasswordInput && "value" in state.syncNewPasswordInput) {
         state.syncNewPasswordInput.value = "";
       }
       if (state.syncChangePasswordConfirmInput && "value" in state.syncChangePasswordConfirmInput) {
         state.syncChangePasswordConfirmInput.value = "";
+      }
+      if (state.syncPasswordChangeMode && "value" in state.syncPasswordChangeMode) {
+        state.syncPasswordChangeMode.value = "current";
       }
       if (state.syncPasswordChangeError && "value" in state.syncPasswordChangeError) {
         state.syncPasswordChangeError.value = "";
@@ -1240,6 +1265,9 @@
       if (state.syncShowPasswordModal && "value" in state.syncShowPasswordModal) {
         state.syncShowPasswordModal.value = false;
       }
+      if (state.syncPasswordChangeMode && "value" in state.syncPasswordChangeMode) {
+        state.syncPasswordChangeMode.value = "current";
+      }
       if (state.syncPasswordChangeError && "value" in state.syncPasswordChangeError) {
         state.syncPasswordChangeError.value = "";
       }
@@ -1250,12 +1278,11 @@
 
     const openSyncPasswordModal = () => {
       if (!ensureSyncFrontendAllowed()) return;
-      if (!state.syncAuthenticated.value) {
-        setSyncError(createSyncTextEntry("sync.error_unauthorized", "ÇëÏÈµÇÂ¼¡£"));
-        return;
-      }
       if (state.syncShowPasswordModal && "value" in state.syncShowPasswordModal) {
         state.syncShowPasswordModal.value = true;
+      }
+      if (state.syncPasswordChangeMode && "value" in state.syncPasswordChangeMode) {
+        state.syncPasswordChangeMode.value = state.syncAuthenticated.value ? "current" : "reset_code";
       }
       if (state.syncPasswordChangeError && "value" in state.syncPasswordChangeError) {
         state.syncPasswordChangeError.value = "";
@@ -1400,6 +1427,23 @@
 
     const handleInitialRemoteStateAfterAuth = async () => {
       const remote = await fetchRemoteSnapshot();
+      const comparison = describeRemoteState(remote);
+      if (comparison.serverVersion <= 0 && comparison.localHasData) {
+        const pushed = await requestJson("sync", {
+          method: "POST",
+          body: JSON.stringify({
+            base_version: 0,
+            data: comparison.localPayload,
+          }),
+        });
+        applySuccessfulPushResult(pushed, comparison.localPayload, comparison.localHash, {
+          noticeKey: "sync.push_success_title",
+          summaryKey: "sync.push_success_summary",
+          fallbackTitle: "已上传本地数据",
+          fallbackSummary: "本地数据已同步到云端。",
+        });
+        return "pushed";
+      }
       return reconcileRemoteSnapshot(remote, {
         noticeKey: "sync.pull_success_summary",
         fallbackNotice: "服务器数据已应用到当前设备。",
@@ -1466,6 +1510,24 @@
           `${summaryKey}:${state.syncRemoteVersion.value}:${state.syncRemoteUpdatedAt.value}`
         );
       }
+    };
+
+    const applySuccessfulPushResult = (pushed, localPayload, localHash, options) => {
+      persistMeta({
+        serverVersion: Number(pushed && pushed.version || 0),
+        localHash,
+        syncedAt: new Date().toISOString(),
+        remoteUpdatedAt: pushed && pushed.updated_at ? pushed.updated_at : "",
+      });
+      state.syncRemoteData.value = cloneJson(localPayload, {});
+      state.syncRemoteVersion.value = Number(pushed && pushed.version || 0);
+      state.syncRemoteUpdatedAt.value = String(pushed && pushed.updated_at || "");
+      commitSyncSuccess(
+        options && options.noticeKey ? options.noticeKey : "sync.push_success_title",
+        options && options.summaryKey ? options.summaryKey : "sync.push_success_summary",
+        options && options.fallbackTitle ? options.fallbackTitle : "已上传本地数据",
+        options && options.fallbackSummary ? options.fallbackSummary : "本地数据已同步到云端。"
+      );
     };
 
     const performManualSync = async () => {
@@ -1768,16 +1830,44 @@
 
     const submitSyncPasswordChange = async () => {
       if (!ensureSyncFrontendAllowed()) return;
-      if (!state.syncAuthenticated.value) {
-        setSyncError(createSyncTextEntry("sync.error_unauthorized", "请先登录。"));
-        return;
-      }
+      const authenticated = Boolean(state.syncAuthenticated.value);
+      const useResetCode =
+        !authenticated || String(state.syncPasswordChangeMode.value || "current") === "reset_code";
+      const username = String(state.syncUsernameInput.value || "").trim();
       const currentPassword = String(state.syncCurrentPasswordInput.value || "");
+      const resetCode = String(state.syncResetCodeInput.value || "").trim();
       const newPassword = String(state.syncNewPasswordInput.value || "");
       const confirmPassword = String(state.syncChangePasswordConfirmInput.value || "");
       state.syncPasswordChangeError.value = "";
       state.syncPasswordChangeNotice.value = "";
-      if (!currentPassword || !newPassword || !confirmPassword) {
+
+      if (!authenticated && !useResetCode) {
+        const message = createSyncTextEntry("sync.error_unauthorized", "Please sign in first.");
+        state.syncPasswordChangeError.value = resolveSyncEntry(message).text;
+        setSyncError(message);
+        return;
+      }
+
+      if (useResetCode) {
+        if ((!authenticated && !username) || !resetCode || !newPassword || !confirmPassword) {
+          const message = createSyncTextEntry(
+            "sync.error_missing_reset_password_fields",
+            "Please enter the required reset-code fields."
+          );
+          state.syncPasswordChangeError.value = resolveSyncEntry(message).text;
+          setSyncError(message);
+          return;
+        }
+        if (!authenticated && !usernamePattern.test(username)) {
+          const message = createSyncTextEntry(
+            "sync.error_invalid_username",
+            "Username must be 3-24 letters, numbers, or underscores."
+          );
+          state.syncPasswordChangeError.value = resolveSyncEntry(message).text;
+          setSyncError(message);
+          return;
+        }
+      } else if (!currentPassword || !newPassword || !confirmPassword) {
         const message = createSyncTextEntry(
           "sync.error_missing_change_password_fields",
           "Please enter current password, new password, and confirmation."
@@ -1786,6 +1876,7 @@
         setSyncError(message);
         return;
       }
+
       if (newPassword.length < 6) {
         const message = createSyncTextEntry("sync.error_weak_password", "Password must be at least 6 characters.");
         state.syncPasswordChangeError.value = resolveSyncEntry(message).text;
@@ -1798,17 +1889,69 @@
         setSyncError(message);
         return;
       }
+
       state.syncBusy.value = true;
       try {
-        await requestJson("change-password", {
+        const payload = useResetCode
+          ? {
+              reset_code: resetCode,
+              new_password: newPassword,
+              confirm_password: confirmPassword,
+            }
+          : {
+              current_password: currentPassword,
+              new_password: newPassword,
+              confirm_password: confirmPassword,
+            };
+        if (useResetCode && !authenticated) {
+          payload.username = username;
+        }
+        const response = await requestJson("change-password", {
           method: "POST",
-          body: JSON.stringify({
-            current_password: currentPassword,
-            new_password: newPassword,
-            confirm_password: confirmPassword,
-          }),
+          body: JSON.stringify(payload),
         });
         clearPasswordChangeForm();
+        if (useResetCode) {
+          state.syncAuthMode.value = "login";
+          if (authenticated && response && response.reauth_required === false) {
+            const successEntry = createSyncTextEntry(
+              "sync.change_password_success",
+              "Password updated. Other devices have been signed out."
+            );
+            await refreshSyncSession(true);
+            setSyncNotice(successEntry, "success");
+            pushSyncToast(
+              "success",
+              "sync.change_password_title",
+              "sync.change_password_success",
+              "Change Password",
+              "Password updated. Other devices have been signed out.",
+              "sync-change-password-success"
+            );
+          } else {
+            const successEntry = createSyncTextEntry(
+              "sync.reset_password_success",
+              "Password reset complete. Please sign in with the new password."
+            );
+            writeSessionHint(false);
+            resetSyncSessionState();
+            if (!authenticated) {
+              state.syncUsernameInput.value = username;
+            }
+            setSyncNotice(successEntry, "info");
+            pushSyncToast(
+              "info",
+              "sync.change_password_title",
+              "sync.reset_password_success",
+              "Password Reset",
+              "Password reset complete. Please sign in with the new password.",
+              "sync-reset-password-success"
+            );
+          }
+          closeSyncPasswordModal();
+          return;
+        }
+
         const successEntry = createSyncTextEntry(
           "sync.change_password_success",
           "Password updated. Other devices have been signed out."
@@ -1895,6 +2038,8 @@
     state.syncPasswordInput = ref("");
     state.syncPasswordConfirmInput = ref("");
     state.syncCurrentPasswordInput = ref("");
+    state.syncResetCodeInput = ref("");
+    state.syncPasswordChangeMode = ref("current");
     state.syncNewPasswordInput = ref("");
     state.syncChangePasswordConfirmInput = ref("");
     state.syncPasswordChangeError = ref("");
@@ -2186,6 +2331,8 @@
     watch(state.syncAuthMode, () => {
       if (!state.showSyncModal.value || state.syncAuthenticated.value || !isTurnstileEnabled()) return;
       clearSyncTurnstileMessage();
+      destroySyncTurnstileWidget();
+      void mountSyncTurnstile();
     });
 
   };

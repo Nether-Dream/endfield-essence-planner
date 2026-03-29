@@ -509,7 +509,7 @@
                     v-model="syncPasswordInput"
                     class="secondary-input"
                     type="password"
-                    autocomplete="current-password"
+                    :autocomplete="syncAuthMode === 'register' ? 'new-password' : 'current-password'"
                     minlength="6"
                     :disabled="syncBusy || syncSessionChecking || syncFrontendBlocked"
                     @keydown.enter="submitSyncAuth"
@@ -569,6 +569,7 @@
                   <div v-else class="secondary-hint sync-turnstile-hint">{{ t("sync.turnstile_hint") }}</div>
                 </div>
                 <div class="secondary-hint">{{ t("sync.credentials_hint") }}</div>
+                <div class="secondary-hint">{{ t("sync.password_help_reset_code") }}</div>
                 <div v-if="syncError || syncNotice" class="sync-auth-feedback-stack">
                   <div v-if="syncError" class="sync-feedback sync-feedback-error">
                     {{ syncError }}
@@ -585,9 +586,15 @@
                   >
                     {{ syncAuthMode === 'register' ? t("sync.register_action") : t("sync.login_action") }}
                   </button>
+                  <button
+                    class="ghost-button"
+                    :disabled="syncBusy || syncSessionChecking || syncFrontendBlocked"
+                    @click="openSyncPasswordModal()"
+                  >
+                    {{ t("sync.forgot_password_action") }}
+                  </button>
                 </div>
               </div>
-
               <div v-if="syncAuthenticated && syncConflictDetected" class="secondary-item sync-conflict-panel">
                 <div class="secondary-label">{{ t("sync.conflict_title") }}</div>
                 <div class="secondary-hint">{{ t("sync.conflict_summary") }}</div>
@@ -813,25 +820,74 @@
 
       <transition name="fade-scale">
         <div
-          v-if="showSyncModal && syncAuthenticated && syncShowPasswordModal"
+          v-if="showSyncModal && syncShowPasswordModal"
           class="about-overlay sync-overlay"
           @click.self="closeSyncPasswordModal"
         >
           <div class="about-card notice-card sync-conflict-confirm-card">
             <h3>{{ t("sync.change_password_title") }}</h3>
             <div class="about-body">
-              <div class="secondary-hint">{{ t("sync.change_password_signout_hint") }}</div>
-              <div class="sync-auth-field">
+              <div v-if="syncAuthenticated" class="sync-auth-tabs">
+                <button
+                  class="ghost-button"
+                  :class="{ 'is-active': syncPasswordChangeMode === 'current' }"
+                  :disabled="syncBusy || syncFrontendBlocked"
+                  @click="syncPasswordChangeMode = 'current'"
+                >
+                  {{ t("sync.change_password_mode_current") }}
+                </button>
+                <button
+                  class="ghost-button"
+                  :class="{ 'is-active': syncPasswordChangeMode === 'reset_code' }"
+                  :disabled="syncBusy || syncFrontendBlocked"
+                  @click="syncPasswordChangeMode = 'reset_code'"
+                >
+                  {{ t("sync.change_password_mode_reset") }}
+                </button>
+              </div>
+              <div class="secondary-hint">
+                {{ syncAuthenticated && syncPasswordChangeMode === 'current' ? t("sync.change_password_signout_hint") : t(syncAuthenticated ? "sync.reset_password_logged_in_hint" : "sync.reset_password_logged_out_hint") }}
+              </div>
+              <div class="secondary-hint">{{ t("sync.password_help_reset_code") }}</div>
+              <div v-if="!syncAuthenticated" class="sync-auth-field">
+                <label class="secondary-label">{{ t("sync.username_label") }}</label>
+                <input
+                  v-model.trim="syncUsernameInput"
+                  class="secondary-input"
+                  type="text"
+                  autocomplete="username"
+                  maxlength="24"
+                  pattern="[A-Za-z0-9_]{3,24}"
+                  :disabled="syncBusy || syncFrontendBlocked"
+                  @keydown.enter="submitSyncPasswordChange"
+                />
+                <div class="secondary-hint">{{ t("sync.reset_password_logged_out_hint") }}</div>
+              </div>
+              <div v-if="syncAuthenticated && syncPasswordChangeMode === 'current'" class="sync-auth-field">
                 <label class="secondary-label">{{ t("sync.current_password_label") }}</label>
                 <input
                   v-model="syncCurrentPasswordInput"
                   class="secondary-input"
                   type="password"
+                  autocomplete="current-password"
                   :placeholder="t('sync.current_password_placeholder')"
                   :disabled="syncBusy || syncFrontendBlocked"
                   @keydown.enter="submitSyncPasswordChange"
                 />
                 <div class="secondary-hint">{{ t("sync.current_password_hint") }}</div>
+              </div>
+              <div v-if="!syncAuthenticated || syncPasswordChangeMode === 'reset_code'" class="sync-auth-field">
+                <label class="secondary-label">{{ t("sync.reset_code_label") }}</label>
+                <input
+                  v-model.trim="syncResetCodeInput"
+                  class="secondary-input"
+                  type="text"
+                  autocomplete="one-time-code"
+                  :placeholder="t('sync.reset_code_placeholder')"
+                  :disabled="syncBusy || syncFrontendBlocked"
+                  @keydown.enter="submitSyncPasswordChange"
+                />
+                <div class="secondary-hint">{{ t("sync.reset_code_hint") }}</div>
               </div>
               <div class="sync-auth-field">
                 <label class="secondary-label">{{ t("sync.new_password_label") }}</label>
@@ -839,6 +895,7 @@
                   v-model="syncNewPasswordInput"
                   class="secondary-input"
                   type="password"
+                  autocomplete="new-password"
                   :placeholder="t('sync.new_password_placeholder')"
                   :disabled="syncBusy || syncFrontendBlocked"
                   @keydown.enter="submitSyncPasswordChange"
@@ -851,6 +908,7 @@
                   v-model="syncChangePasswordConfirmInput"
                   class="secondary-input"
                   type="password"
+                  autocomplete="new-password"
                   :placeholder="t('sync.password_confirm_placeholder')"
                   :disabled="syncBusy || syncFrontendBlocked"
                   @keydown.enter="submitSyncPasswordChange"
@@ -868,7 +926,7 @@
             </div>
             <div class="about-actions">
               <button class="about-button" :disabled="syncBusy || syncFrontendBlocked" @click="submitSyncPasswordChange">
-                {{ t("sync.change_password_action") }}
+                {{ syncPasswordChangeMode === 'current' ? t("sync.change_password_action") : t("sync.reset_password_action") }}
               </button>
               <button class="ghost-button" :disabled="syncBusy || syncFrontendBlocked" @click="closeSyncPasswordModal">
                 {{ t("plan_config.close") }}

@@ -1982,6 +1982,8 @@
         syncPasswordInput: state.syncPasswordInput,
         syncPasswordConfirmInput: state.syncPasswordConfirmInput,
         syncCurrentPasswordInput: state.syncCurrentPasswordInput,
+        syncResetCodeInput: state.syncResetCodeInput,
+        syncPasswordChangeMode: state.syncPasswordChangeMode,
         syncNewPasswordInput: state.syncNewPasswordInput,
         syncChangePasswordConfirmInput: state.syncChangePasswordConfirmInput,
         syncPasswordChangeError: state.syncPasswordChangeError,
