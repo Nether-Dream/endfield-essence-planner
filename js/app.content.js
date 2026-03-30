@@ -167,6 +167,7 @@
       version: "",
       title: t("nav.announcement"),
       date: "",
+      forceModal: false,
       qqGroup: "",
       qqNote: "",
       items: [],

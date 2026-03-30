@@ -15,9 +15,9 @@
       }
 
       html {
-        --app-safe-top-inset: env(safe-area-inset-top, 0px);
+        --app-safe-top-inset: 0px;
         --app-safe-bottom-inset: env(safe-area-inset-bottom, 0px);
-        --app-safe-left-inset: env(safe-area-inset-left, 0px);
+        --app-safe-left-inset: 0px;
         --app-safe-right-inset: env(safe-area-inset-right, 0px);
 
         --color-accent-rgb: 77, 214, 201;
@@ -703,6 +703,7 @@
         overflow: hidden;
         text-overflow: ellipsis;
         white-space: nowrap;
+        text-transform: none;
       }
 
       .secondary-panel .about-button.secondary-shortcut {
@@ -862,6 +863,16 @@
         align-content: start;
       }
 
+      .sync-payment-qr {
+        width: min(180px, 100%);
+        aspect-ratio: 1 / 1;
+        object-fit: contain;
+        border-radius: 12px;
+        border: 1px solid rgba(var(--color-white-rgb), var(--alpha-10));
+        background: rgba(var(--color-white-rgb), var(--alpha-04));
+        padding: 8px;
+      }
+
       .sync-conflict-panel {
         display: grid;
         gap: 10px;
@@ -983,6 +994,19 @@
         line-height: 1.2;
         color: var(--text);
         overflow-wrap: anywhere;
+      }
+
+      .sync-badge-pill {
+        display: inline-flex;
+        align-items: center;
+        margin-left: 8px;
+        padding: 2px 8px;
+        border-radius: 999px;
+        font-size: 11px;
+        font-weight: 700;
+        color: #142033;
+        background: linear-gradient(135deg, rgba(var(--color-warning-rgb), 0.9), rgba(255, 240, 196, 0.92));
+        vertical-align: middle;
       }
 
       .sync-status-metrics {
@@ -1151,6 +1175,41 @@
       .sync-dev-panel {
         border-top: 1px dashed rgba(var(--color-white-rgb), var(--alpha-12));
         padding-top: 12px;
+      }
+
+      .hero-ad-banner {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin: 8px auto 16px;
+        padding: 8px 12px;
+        width: min(1180px, calc(100% - 24px));
+        border-radius: 12px;
+        border: 1px solid rgba(var(--color-white-rgb), var(--alpha-18));
+        background: rgba(8, 12, 20, 0.78);
+        box-shadow: 0 10px 28px rgba(0, 0, 0, 0.18);
+      }
+
+      .hero-ad-badge {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 34px;
+        height: 24px;
+        padding: 0 8px;
+        border-radius: 999px;
+        background: rgba(var(--color-warning-rgb), 0.22);
+        color: #ffd7ac;
+        font-size: 11px;
+        font-weight: 800;
+        letter-spacing: 0.08em;
+        flex: 0 0 auto;
+      }
+
+      .hero-ad-link {
+        width: fit-content;
+        white-space: nowrap;
+        flex: 0 0 auto;
       }
 
       @media (max-width: 720px) {
@@ -3922,6 +3981,87 @@
 
       .icp-footer a:hover {
         color: var(--text);
+      }
+
+      /* Sync Error Details */
+      .sync-error-details {
+        margin-top: 8px;
+        font-size: 12px;
+        color: inherit;
+        opacity: 0.8;
+      }
+      .sync-error-details summary {
+        cursor: pointer;
+        font-weight: 600;
+        user-select: none;
+      }
+      .sync-error-details summary:hover {
+        text-decoration: underline;
+      }
+      .sync-error-details pre {
+        margin: 6px 0 0;
+        padding: 8px;
+        background: rgba(0, 0, 0, 0.1);
+        border-radius: 6px;
+        overflow-x: auto;
+        white-space: pre-wrap;
+        word-break: break-all;
+        font-family: monospace;
+        font-size: 11px;
+        line-height: 1.4;
+      }
+
+      /* 分页控件样式 */
+      .pagination-controls {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 12px;
+        margin-top: 16px;
+        padding: 12px;
+        background: #f8fbff;
+        border: 1px solid #dbe7fb;
+        border-radius: 12px;
+      }
+      .pagination-info {
+        font-size: 12px;
+        color: #5c677a;
+        min-width: 150px;
+      }
+      .pagination-buttons {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+      .pagination-pages {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+      }
+      .pagination-size {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        margin-left: auto;
+      }
+      .pagination-size label {
+        font-size: 12px;
+        color: #5c677a;
+      }
+      .pagination-size-select {
+        padding: 4px 8px;
+        border: 1px solid #d5deea;
+        border-radius: 6px;
+        background: white;
+        font-size: 12px;
+      }
+      .pagination-controls .btn {
+        padding: 6px 12px;
+        font-size: 12px;
+      }
+      .pagination-controls .btn:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
       }
 
 

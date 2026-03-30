@@ -23,6 +23,8 @@
     });
     state.customWeaponError = ref(null);
     state.showAbout = ref(false);
+    state.aboutAdLoaded = ref(false);
+    state.showAdblockNotice = ref(false);
     state.showFaq = ref(false);
     state.showSyncModal = ref(false);
     state.showSecondaryMenu = ref(false);

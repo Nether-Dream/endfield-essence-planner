@@ -51,4 +51,6 @@ window.SPONSORS = [
   { name: "HW", amount: "CNY 50.00", note: "这么好用的网站我必须V你50了", date: "2026-03-17" },
   { name: " ", amount: "CNY 6.66", note: "老大我想要一个返回顶部的按钮", date: "2026-03-18" },
   { name: "一口华夫饼", amount: "CNY 5.00", note: "太牛了这个网站", date: "2026-03-19" },
+  { name: "LanderC_", amount: "CNY 10.00", note: "非常好用!", date: "2026-03-26" },
+  { name: "QvQ", amount: "CNY 5.00", note: "", date: "2026-03-26" },
 ];

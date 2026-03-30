@@ -1230,6 +1230,49 @@
       }
     };
 
+    let heroActionsOffsetRaf = null;
+    let heroActionsOffsetTimer = null;
+    const heroActionsOffsetFallback = 0;
+    const heroActionsOffsetVar = "--toast-hero-actions-top";
+    const setHeroActionsOffset = (value) => {
+      if (!root) return;
+      const numeric = Number.isFinite(value) ? Math.max(0, Math.round(value)) : heroActionsOffsetFallback;
+      root.style.setProperty(heroActionsOffsetVar, `${numeric}px`);
+    };
+    const measureHeroActionsOffset = () => {
+      if (typeof document === "undefined") return;
+      const el = document.querySelector(".hero-actions");
+      if (!el || typeof el.getBoundingClientRect !== "function") {
+        setHeroActionsOffset(heroActionsOffsetFallback);
+        return;
+      }
+      const rect = el.getBoundingClientRect();
+      const styles = typeof window !== "undefined" && window.getComputedStyle
+        ? window.getComputedStyle(el)
+        : null;
+      const marginBottom = styles ? Number.parseFloat(styles.marginBottom || "0") || 0 : 0;
+      const top = rect.top + rect.height + marginBottom + 12;
+      setHeroActionsOffset(top);
+    };
+    const scheduleHeroActionsOffset = () => {
+      if (heroActionsOffsetRaf) {
+        cancelAnimationFrame(heroActionsOffsetRaf);
+        heroActionsOffsetRaf = null;
+      }
+      if (heroActionsOffsetTimer) {
+        clearTimeout(heroActionsOffsetTimer);
+        heroActionsOffsetTimer = null;
+      }
+      heroActionsOffsetRaf = requestAnimationFrame(() => {
+        heroActionsOffsetRaf = null;
+        measureHeroActionsOffset();
+      });
+      heroActionsOffsetTimer = setTimeout(() => {
+        heroActionsOffsetTimer = null;
+        measureHeroActionsOffset();
+      }, 160);
+    };
+
     onMounted(() => {
       const finalizePreload = () => {
         warmupBackgroundBeforeFinish()
@@ -1256,6 +1299,10 @@
         applyTheme(state.themePreference.value || "auto");
         updateViewportOrientation();
         window.addEventListener("resize", updateViewportOrientation);
+        scheduleHeroActionsOffset();
+        window.addEventListener("resize", scheduleHeroActionsOffset);
+        window.addEventListener("orientationchange", scheduleHeroActionsOffset);
+        window.addEventListener("pageshow", scheduleHeroActionsOffset);
         updateViewportSafeBottom();
         window.addEventListener("resize", scheduleViewportSafeBottom);
         if (window.visualViewport) {
@@ -1299,6 +1346,9 @@
       if (typeof window !== "undefined") {
         window.removeEventListener("scroll", handleBackToTopScroll);
         window.removeEventListener(optionalFailureEventName, handleOptionalFailureEvent);
+        window.removeEventListener("resize", scheduleHeroActionsOffset);
+        window.removeEventListener("orientationchange", scheduleHeroActionsOffset);
+        window.removeEventListener("pageshow", scheduleHeroActionsOffset);
       }
       clearBackToTopTimer();
       if (optionalFailurePollTimer) {
@@ -1313,6 +1363,14 @@
       if (toastPointerSyncHandle) {
         cancelAnimationFrame(toastPointerSyncHandle);
         toastPointerSyncHandle = 0;
+      }
+      if (heroActionsOffsetRaf) {
+        cancelAnimationFrame(heroActionsOffsetRaf);
+        heroActionsOffsetRaf = null;
+      }
+      if (heroActionsOffsetTimer) {
+        clearTimeout(heroActionsOffsetTimer);
+        heroActionsOffsetTimer = null;
       }
       toastPointerTrackerReady = false;
       toastPointerPosition = null;

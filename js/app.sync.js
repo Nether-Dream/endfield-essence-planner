@@ -19,7 +19,6 @@
       typeof window !== "undefined" && typeof window.__APP_RUNTIME_ENV__ === "string"
         ? String(window.__APP_RUNTIME_ENV__ || "").toLowerCase()
         : "";
-    const syncStatusLimit = 8;
     const autoSyncDelayMs = 8000;
     const syncModalOpenCheckCooldownMs = 30000;
     const remoteRefreshFocusCooldownMs = 60000;
@@ -31,6 +30,7 @@
     const syncTurnstileSiteKey = "0x4AAAAAACxC56LlFLuFLUXe";
     const syncTurnstileAction = "sync_auth";
     const syncTurnstileScriptSrc = "https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit";
+    const adblockNoticeSessionKey = "planner-adblock-notice-shown:v1";
     let autoSyncTimer = null;
     let autoSyncCountdownTimer = null;
     let syncSessionRequest = null;
@@ -44,6 +44,7 @@
     let syncTurnstileLoadPromise = null;
     let syncTurnstileMountPromise = null;
     let syncTurnstileMountVersion = 0;
+    let adblockDetectionTimer = null;
 
     const getRefValue = (target, fallback) =>
       target && typeof target === "object" && "value" in target ? target.value : fallback;
@@ -517,61 +518,71 @@
       };
     };
 
-    const resolveSyncStatusMessage = (item) => {
-      if (!item) return "";
-      if (item.messageKey) {
-        return coerceSyncText(
-          getSyncText(item.messageKey, item.message || "", item.messageParams || undefined),
-          item.message || ""
-        );
-      }
-      const translated = translateSyncError(item.message);
-      if (translated && translated !== item.message) return coerceSyncText(translated, item.message || "");
-      return coerceSyncText(item.message, "");
-    };
+    const sanitizeErrorDetails = (obj) => {
+      const sensitiveKeys = ['password', 'token', 'secret', 'key', 'hash', 'authorization', 'cookie', 'session', 'code'];
+      const stringSensitivePatterns = [
+        /(bearer\s+[a-z0-9._-]+)/i,
+        /([a-f0-9]{32,})/i,
+        /(cookie\s*[:=]\s*[^\s]+)/i,
+      ];
+      const seen = new WeakSet();
 
-    const pushSyncStatus = (tone, message) => {
-      const entry = resolveSyncEntry(message);
-      const text = String(entry.text || "").trim();
-      if (!text || !state.syncStatusItems || !("value" in state.syncStatusItems)) return;
-      const now = new Date();
-      const next = {
-        id: `${now.getTime()}-${Math.random().toString(16).slice(2, 8)}`,
-        tone: tone === "error" ? "error" : tone === "info" ? "info" : "success",
-        message: text,
-        messageKey: entry.messageKey,
-        messageParams: entry.params,
-        timestamp: now.toISOString(),
-        timeLabel: formatSyncStatusTime(now),
+      const maskString = (value) => {
+        let text = String(value);
+        stringSensitivePatterns.forEach((pattern) => {
+          text = text.replace(pattern, '***');
+        });
+        if (text.length > 4000) {
+          text = `${text.slice(0, 4000)}\n...<truncated>`;
+        }
+        return text;
       };
-      const current = Array.isArray(state.syncStatusItems.value) ? state.syncStatusItems.value.slice() : [];
-      if (
-        current.length &&
-        current[0].tone === next.tone &&
-        current[0].message === next.message &&
-        current[0].messageKey === next.messageKey
-      ) {
-        current[0] = next;
-      } else {
-        current.unshift(next);
-      }
-      state.syncStatusItems.value = current.slice(0, syncStatusLimit);
+
+      const traverse = (o, depth = 0) => {
+        if (depth > 8) return '...<max depth>';
+        if (typeof o === 'string') return maskString(o);
+        if (typeof o !== 'object' || o === null) return o;
+        if (seen.has(o)) return '...<circular reference>';
+        seen.add(o);
+        const result = Array.isArray(o) ? [] : {};
+        for (const [k, v] of Object.entries(o)) {
+          if (sensitiveKeys.some(sk => String(k).toLowerCase().includes(sk))) {
+            result[k] = '***';
+          } else {
+            result[k] = traverse(v, depth + 1);
+          }
+        }
+        return result;
+      };
+
+      const json = JSON.stringify(traverse(obj), null, 2);
+      if (!json) return '';
+      return json.length > 12000 ? `${json.slice(0, 12000)}\n...<truncated>` : json;
     };
 
-    const scrollSyncStatusListToTop = () => {
-      const list = getRefValue(state.syncStatusListRef, null);
-      if (!list || typeof list.scrollTop !== "number") return;
-      list.scrollTop = 0;
-    };
+    const buildSyncErrorDetails = (error, context) => sanitizeErrorDetails({
+      diagnostics: Object.assign(
+        {
+          status: error?.status || 'N/A',
+          type: error?.name || error?.constructor?.name || 'Error',
+          code: extractSyncErrorCode(error && error.payload ? error.payload.error : error && error.message) || 'unknown',
+          endpoint: context?.endpoint || error?.requestContext?.endpoint || 'unknown',
+          method: context?.method || error?.requestContext?.method || 'GET',
+          syncMode: context?.syncMode || error?.requestContext?.syncMode || '',
+          url: context?.url || error?.requestContext?.url || '',
+        },
+        context?.extra || null
+      ),
+      rawMessage: error?.message || '',
+      payload: error?.payload,
+    });
 
-    const setSyncError = (message) => {
+    const setSyncError = (message, details = "") => {
       const entry = resolveSyncEntry(message);
       const text = String(entry.text || "");
       state.syncError.value = text;
+      state.syncErrorDetails.value = details;
       state.syncNotice.value = "";
-      if (text) {
-        pushSyncStatus("error", entry);
-      }
     };
 
     const setSyncNotice = (message, tone) => {
@@ -579,9 +590,7 @@
       const text = String(entry.text || "");
       state.syncNotice.value = text;
       state.syncError.value = "";
-      if (text) {
-        pushSyncStatus(tone || "success", entry);
-      }
+      state.syncErrorDetails.value = "";
     };
 
     const persistMeta = (meta) => {
@@ -596,6 +605,7 @@
     const persistPrefs = () => {
       writeJsonStorage(syncPrefsStorageKey, {
         successToastEnabled: Boolean(state.syncSuccessToastEnabled.value),
+        autoSyncEnabled: Boolean(state.syncAutoSyncEnabled.value),
       });
     };
 
@@ -919,6 +929,10 @@
         reset_code_unavailable: "sync.error_reset_code_unavailable",
         password_mismatch: "sync.error_password_mismatch",
         account_disabled: "sync.error_account_disabled",
+        email_unavailable: "sync.error_email_unavailable",
+        email_send_failed: "sync.error_email_send_failed",
+        register_conflict: "sync.error_register_conflict",
+        payment_claim_failed: "sync.error_payment_claim_failed",
         unauthorized: "sync.error_unauthorized",
         invalid_payload: "sync.error_invalid_payload",
         auth_failed: "sync.error_auth_failed",
@@ -1002,9 +1016,10 @@
         return getSyncText("sync.error_official_only", "同步功能仅在官方网站 https://end.canmoe.com 可用");
       }
       if (!raw || /^TypeError\b/i.test(raw) || /Failed to fetch|Load failed|NetworkError/i.test(raw)) {
-        return maybeAppendSupportHint(getSyncText(fallbackKey, fallbackText));
+        const networkError = raw || '网络连接失败';
+        return maybeAppendSupportHint(`请求未到达服务器，可能是 CORS、网络异常或服务不可达。浏览器信息：${networkError}`);
       }
-      return maybeAppendSupportHint(raw);
+      return maybeAppendSupportHint(getSyncText("sync.error_unknown", "未知错误"));
     };
 
     const syncTurnstileToneByErrorCode = (errorCode) => {
@@ -1050,7 +1065,22 @@
         getSyncRequestHeaders(requestOptions),
         options && isPlainObject(options.headers) ? options.headers : {}
       );
-      const response = await fetch(buildApiUrl(endpoint, query), requestOptions);
+      const requestUrl = buildApiUrl(endpoint, query);
+      const requestContext = {
+        endpoint,
+        method: String(requestOptions.method || 'GET').toUpperCase(),
+        syncMode: requestOptions.headers && requestOptions.headers['X-Sync-Mode']
+          ? String(requestOptions.headers['X-Sync-Mode'])
+          : '',
+        url: requestUrl,
+      };
+      let response;
+      try {
+        response = await fetch(requestUrl, requestOptions);
+      } catch (error) {
+        error.requestContext = requestContext;
+        throw error;
+      }
       let payload = null;
       try {
         payload = await response.json();
@@ -1068,9 +1098,91 @@
         const error = new Error(errorMessage);
         error.status = response.status;
         error.payload = payload;
+        error.requestContext = requestContext;
         throw error;
       }
       return payload || {};
+    };
+
+    const readAdblockDismissedInSession = () => {
+      if (typeof window === 'undefined') return false;
+      try {
+        return Boolean(window.sessionStorage && window.sessionStorage.getItem(adblockNoticeSessionKey) === '1');
+      } catch (error) {
+        return false;
+      }
+    };
+
+    const writeAdblockDismissedInSession = () => {
+      if (typeof window === 'undefined') return;
+      try {
+        if (window.sessionStorage) window.sessionStorage.setItem(adblockNoticeSessionKey, '1');
+      } catch (error) {
+        // ignore storage issues
+      }
+    };
+
+    const closeAdblockNotice = () => {
+      state.showAdblockNotice.value = false;
+      writeAdblockDismissedInSession();
+    };
+
+    const getHeroAdVisibilityState = () => {
+      if (typeof document === 'undefined' || typeof window === 'undefined') {
+        return { exists: false, visible: false, hidden: false, collapsed: false };
+      }
+      const adContainer = document.querySelector('.hero-ad-banner');
+      if (!adContainer) {
+        return { exists: false, visible: false, hidden: false, collapsed: false };
+      }
+      const rect = typeof adContainer.getBoundingClientRect === 'function'
+        ? adContainer.getBoundingClientRect()
+        : { width: 0, height: 0 };
+      const styles = typeof window.getComputedStyle === 'function'
+        ? window.getComputedStyle(adContainer)
+        : null;
+      const hidden = styles
+        ? styles.display === 'none' || styles.visibility === 'hidden' || Number(styles.opacity || 1) === 0
+        : false;
+      const collapsed = rect.width <= 0 || rect.height <= 0;
+      return {
+        exists: true,
+        visible: !hidden && !collapsed,
+        hidden,
+        collapsed,
+      };
+    };
+
+    const clearAdblockDetectionTimer = () => {
+      if (adblockDetectionTimer) {
+        clearTimeout(adblockDetectionTimer);
+        adblockDetectionTimer = null;
+      }
+    };
+
+    const maybeShowAdblockNoticeOnce = () => {
+      if (typeof document === 'undefined' || typeof window === 'undefined') return;
+      if (readAdblockDismissedInSession()) return;
+      clearAdblockDetectionTimer();
+      state.aboutAdLoaded.value = false;
+      state.showAdblockNotice.value = false;
+      const firstPass = getHeroAdVisibilityState();
+      if (firstPass.visible) {
+        state.aboutAdLoaded.value = true;
+        return;
+      }
+      adblockDetectionTimer = window.setTimeout(() => {
+        adblockDetectionTimer = null;
+        if (readAdblockDismissedInSession()) return;
+        const secondPass = getHeroAdVisibilityState();
+        if (secondPass.visible) {
+          state.aboutAdLoaded.value = true;
+          state.showAdblockNotice.value = false;
+          return;
+        }
+        state.aboutAdLoaded.value = false;
+        state.showAdblockNotice.value = true;
+      }, 360);
     };
 
     const clearSyncConflictUiState = () => {
@@ -1131,13 +1243,20 @@
     };
 
     const fetchRemoteSnapshot = async () => {
-      const remote = await requestJson("sync");
+      const remote = await requestJson("sync", {
+        headers: {
+          "X-Sync-Mode": "auto",
+        },
+      });
       updateRemoteSnapshot(remote);
       return remote;
     };
 
     const fetchRemoteMeta = async () => {
       const remote = await requestJson("sync", {
+        headers: {
+          "X-Sync-Mode": "auto",
+        },
         query: {
           meta: "1",
         },
@@ -1259,6 +1378,9 @@
       if (state.syncPasswordChangeNotice && "value" in state.syncPasswordChangeNotice) {
         state.syncPasswordChangeNotice.value = "";
       }
+      if (state.syncPasswordResetRequestAccountInput && "value" in state.syncPasswordResetRequestAccountInput) {
+        state.syncPasswordResetRequestAccountInput.value = "";
+      }
     };
 
     const closeSyncPasswordModal = () => {
@@ -1289,6 +1411,169 @@
       }
       if (state.syncPasswordChangeNotice && "value" in state.syncPasswordChangeNotice) {
         state.syncPasswordChangeNotice.value = "";
+      }
+    };
+
+    const closeSyncEmailModal = () => {
+      if (state.syncShowEmailModal && "value" in state.syncShowEmailModal) {
+        state.syncShowEmailModal.value = false;
+      }
+      if (state.syncEmailActionMode && "value" in state.syncEmailActionMode) {
+        state.syncEmailActionMode.value = "change";
+      }
+      if (state.syncEmailActionInput && "value" in state.syncEmailActionInput) {
+        state.syncEmailActionInput.value = "";
+      }
+      if (state.syncEmailCodeInput && "value" in state.syncEmailCodeInput) {
+        state.syncEmailCodeInput.value = "";
+      }
+      if (state.syncEmailActionError && "value" in state.syncEmailActionError) {
+        state.syncEmailActionError.value = "";
+      }
+      if (state.syncEmailActionNotice && "value" in state.syncEmailActionNotice) {
+        state.syncEmailActionNotice.value = "";
+      }
+    };
+
+    const openSyncEmailModal = () => {
+      if (!ensureSyncFrontendAllowed()) return;
+      state.syncShowEmailModal.value = true;
+      state.syncEmailActionMode.value = state.syncUser.value && state.syncUser.value.email_verified === false ? 'verify' : 'change';
+      state.syncEmailActionInput.value = state.syncUser.value && state.syncUser.value.pending_email
+        ? String(state.syncUser.value.pending_email)
+        : (state.syncUser.value && state.syncUser.value.email ? String(state.syncUser.value.email) : '');
+      state.syncEmailCodeInput.value = '';
+      state.syncEmailActionError.value = '';
+      state.syncEmailActionNotice.value = '';
+    };
+
+    const sendSyncVerificationCode = async () => {
+      if (!state.syncAuthenticated.value) return;
+      state.syncBusy.value = true;
+      try {
+        await requestJson('change-email', {
+          method: 'POST',
+          body: JSON.stringify({ email: state.syncUser && state.syncUser.value && state.syncUser.value.email ? state.syncUser.value.email : '' }),
+        });
+        const notice = createSyncTextEntry('sync.verification_code_sent_notice', '验证码已发送，请查收邮箱。');
+        setSyncNotice(notice, 'info');
+      } catch (error) {
+        handleSyncRequestFailure(error, 'sync.error_sync_failed', '同步失败，请稍后重试。');
+        state.syncPasswordChangeError.value = state.syncError.value;
+      } finally {
+        state.syncBusy.value = false;
+      }
+    };
+
+    const submitSyncEmailAction = async () => {
+      if (!state.syncAuthenticated.value) return;
+      state.syncEmailActionError.value = '';
+      state.syncEmailActionNotice.value = '';
+      state.syncBusy.value = true;
+      try {
+        if (state.syncEmailActionMode.value === 'verify') {
+          await requestJson('verify-email', {
+            method: 'POST',
+            body: JSON.stringify({ code: String(state.syncEmailCodeInput.value || '').trim() }),
+          });
+          const notice = createSyncTextEntry('sync.email_verified_notice', '邮箱验证已完成。');
+          state.syncEmailActionNotice.value = resolveSyncEntry(notice).text;
+          await refreshSyncSession(true);
+          closeSyncEmailModal();
+          setSyncNotice(notice, 'success');
+          return;
+        }
+
+        await requestJson('change-email', {
+          method: 'POST',
+          body: JSON.stringify({ email: String(state.syncEmailActionInput.value || '').trim() }),
+        });
+        const notice = createSyncTextEntry('sync.email_change_notice', '邮箱已更新或已发送验证邮件。');
+        state.syncEmailActionNotice.value = resolveSyncEntry(notice).text;
+        await refreshSyncSession(true);
+        setSyncNotice(notice, 'info');
+      } catch (error) {
+        const result = handleSyncRequestFailure(error, 'sync.error_sync_failed', '同步失败，请稍后重试。');
+        if (result !== 'error') {
+          state.syncEmailActionError.value = state.syncError.value;
+        }
+      } finally {
+        state.syncBusy.value = false;
+      }
+    };
+
+    const submitPaymentClaim = async () => {
+      if (!state.syncAuthenticated.value) {
+        setSyncError(createSyncTextEntry('sync.error_unauthorized', '请先登录。'));
+        return;
+      }
+      const channel = String(state.syncPaymentChannelInput.value || '').trim();
+      const reference = String(state.syncPaymentReferenceInput.value || '').trim();
+      if (!channel || !reference) {
+        const message = createSyncTextEntry('sync.error_invalid_payment_claim', '请先选择支付方式并填写支付凭证。');
+        state.syncPaymentClaimError.value = resolveSyncEntry(message).text;
+        setSyncError(message);
+        return;
+      }
+      state.syncPaymentClaimError.value = '';
+      state.syncPaymentClaimNotice.value = '';
+      state.syncBusy.value = true;
+      try {
+        const result = await requestJson('submit-payment-claim', {
+          method: 'POST',
+          body: JSON.stringify({ channel, reference }),
+        });
+        const status = result && result.claim && result.claim.status ? String(result.claim.status) : 'pending';
+        const notice = createSyncTextEntry(
+          status === 'matched_auto' ? 'sync.payment_claim_matched_notice' : 'sync.payment_claim_pending_notice',
+          status === 'matched_auto' ? '支付凭证匹配成功，会员已自动开通。' : '支付凭证已提交，等待系统匹配或后台处理。'
+        );
+        state.syncPaymentClaimNotice.value = resolveSyncEntry(notice).text;
+        state.syncPaymentReferenceInput.value = '';
+        await refreshSyncSession(true);
+        setSyncNotice(notice, 'info');
+      } catch (error) {
+        const result = handleSyncRequestFailure(error, 'sync.error_sync_failed', '同步失败，请稍后重试。');
+        if (result !== 'error') {
+          state.syncPaymentClaimError.value = state.syncError.value;
+        }
+      } finally {
+        state.syncBusy.value = false;
+      }
+    };
+
+    const requestSyncResetCode = async () => {
+      const account = String(
+        state.syncPasswordResetRequestAccountInput.value ||
+        state.syncAccountInput.value ||
+        state.syncUsernameInput.value ||
+        ""
+      ).trim();
+      if (!account) {
+        const message = createSyncTextEntry(
+          "sync.error_missing_reset_password_fields",
+          "请完整填写重置码改密所需信息。"
+        );
+        state.syncPasswordChangeError.value = resolveSyncEntry(message).text;
+        setSyncError(message);
+        return;
+      }
+      state.syncBusy.value = true;
+      try {
+        await requestJson("send-reset-code", {
+          method: "POST",
+          body: JSON.stringify({ account }),
+        });
+        const notice = createSyncTextEntry(
+          "sync.reset_code_sent_notice",
+          "如果账号已绑定邮箱，重置码已发送到邮箱。"
+        );
+        state.syncPasswordChangeNotice.value = resolveSyncEntry(notice).text;
+        setSyncNotice(notice, "info");
+      } catch (error) {
+        handleSyncRequestFailure(error, "sync.error_sync_failed", "同步失败，请稍后重试。");
+      } finally {
+        state.syncBusy.value = false;
       }
     };
 
@@ -1351,11 +1636,82 @@
       if (options && options.silent) return;
     };
 
+    const handleSyncRestrictedAccount = (errorCode) => {
+      const key = errorCode === "email_verification_required"
+        ? "sync.error_email_verification_required"
+        : "sync.error_premium_required";
+      const fallback = errorCode === "email_verification_required"
+        ? "邮箱验证已超期，请先完成邮箱验证。"
+        : "当前账号未开通有效试用或会员，暂不可使用云同步。";
+      setSyncError(createSyncTextEntry(key, fallback));
+      return errorCode;
+    };
+
+    const handleSyncKnownBusinessError = (errorCode, error) => {
+      const knownMap = {
+        invalid_credentials: {
+          key: 'sync.error_invalid_credentials',
+          fallback: '用户名、邮箱或密码错误。',
+        },
+        invalid_reset_code: {
+          key: 'sync.error_invalid_reset_code',
+          fallback: '重置码无效、已过期或已被使用。',
+        },
+        invalid_verification_code: {
+          key: 'sync.error_invalid_verification_code',
+          fallback: '邮箱验证码无效、已过期或已被使用。',
+        },
+        invalid_email: {
+          key: 'sync.error_invalid_email',
+          fallback: '请输入有效邮箱地址。',
+        },
+        email_unavailable: {
+          key: 'sync.error_email_unavailable',
+          fallback: '当前服务暂不支持邮箱功能。',
+        },
+        email_send_failed: {
+          key: 'sync.error_email_send_failed',
+          fallback: '邮件发送失败，请稍后重试。',
+        },
+        email_taken: {
+          key: 'sync.error_email_taken',
+          fallback: '该邮箱已被占用。',
+        },
+        username_taken: {
+          key: 'sync.error_username_taken',
+          fallback: '该用户名已被占用。',
+        },
+        register_conflict: {
+          key: 'sync.error_register_conflict',
+          fallback: '注册信息与现有账号冲突，请更换后重试。',
+        },
+        payment_claim_failed: {
+          key: 'sync.error_payment_claim_failed',
+          fallback: '支付凭证提交失败，请稍后重试。',
+        },
+      };
+      const matched = knownMap[errorCode];
+      if (!matched) return false;
+      const errorDetails = buildSyncErrorDetails(error);
+      setSyncError(createSyncTextEntry(matched.key, matched.fallback), errorDetails);
+      return true;
+    };
+
     const handleSyncRequestFailure = (error, fallbackKey, fallbackText, options) => {
       const errorCode = extractSyncErrorCode(error && error.payload ? error.payload.error : error && error.message);
       if (errorCode === "account_disabled") {
         handleSyncAccountDisabled(options);
         return "account_disabled";
+      }
+      if (errorCode === "maintenance_mode") {
+        setSyncError(createSyncTextEntry("sync.error_maintenance", "服务维护中。"));
+        return "maintenance_mode";
+      }
+      if (errorCode === "email_verification_required" || errorCode === "premium_required") {
+        return handleSyncRestrictedAccount(errorCode);
+      }
+      if (handleSyncKnownBusinessError(errorCode, error)) {
+        return errorCode;
       }
       if (error && error.status === 401) {
         handleSyncUnauthorized(options);
@@ -1367,15 +1723,18 @@
       if (options && options.silent) {
         return "error";
       }
+      const httpStatus = error?.status ? `HTTP ${error.status}` : 'HTTP N/A';
+      const errorDetails = buildSyncErrorDetails(error);
       const message = normalizeSyncMessage(
         error && error.message ? error.message : "",
         fallbackKey,
         fallbackText,
         error && error.payload ? error.payload : null
       );
-      setSyncError(message);
+      const messageWithStatus = `${httpStatus}: ${message}`;
+      setSyncError(messageWithStatus, errorDetails);
       if (options && options.toastOnError) {
-        pushSyncToast("danger", "sync.failure_title", "sync.failure_summary", "同步失败", message, `sync-failure:${message}`);
+        pushSyncToast("danger", "sync.failure_title", "sync.failure_summary", "同步失败", messageWithStatus, `sync-failure:${messageWithStatus}`);
       }
       return "error";
     };
@@ -1431,6 +1790,9 @@
       if (comparison.serverVersion <= 0 && comparison.localHasData) {
         const pushed = await requestJson("sync", {
           method: "POST",
+          headers: {
+            "X-Sync-Mode": "manual",
+          },
           body: JSON.stringify({
             base_version: 0,
             data: comparison.localPayload,
@@ -1542,7 +1904,11 @@
       try {
         const localPayload = buildLocalPayload();
         const localHash = buildComparableHash(localPayload);
-        const remote = await requestJson("sync");
+        const remote = await requestJson("sync", {
+          headers: {
+            "X-Sync-Mode": "manual",
+          },
+        });
         state.syncRemoteData.value = cloneJson(remote.data, {});
         state.syncRemoteVersion.value = Number(remote.version || 0);
         state.syncRemoteUpdatedAt.value = String(remote.updated_at || "");
@@ -1605,6 +1971,9 @@
 
         const pushed = await requestJson("sync", {
           method: "POST",
+          headers: {
+            "X-Sync-Mode": "manual",
+          },
           body: JSON.stringify({
             base_version: Number(remote.version || 0),
             data: localPayload,
@@ -1665,6 +2034,9 @@
         const baseVersion = current ? Number(current.version || 0) : Number(state.syncRemoteVersion.value || 0);
         const pushed = await requestJson("sync", {
           method: "POST",
+          headers: {
+            "X-Sync-Mode": "manual",
+          },
           body: JSON.stringify({
             base_version: baseVersion,
             data: localPayload,
@@ -1725,8 +2097,8 @@
 
     const clearSyncFeedback = () => {
       state.syncError.value = "";
+      state.syncErrorDetails.value = "";
       state.syncNotice.value = "";
-      state.syncStatusItems.value = [];
     };
 
     const sendBestEffortLeaveSync = () => {
@@ -1760,15 +2132,22 @@
 
     const submitSyncAuth = async () => {
       if (!ensureSyncFrontendAllowed()) return;
+      const account = String(state.syncAccountInput.value || "").trim();
       const username = String(state.syncUsernameInput.value || "").trim();
+      const email = String(state.syncEmailInput.value || "").trim();
       const password = String(state.syncPasswordInput.value || "");
       const confirmPassword = String(state.syncPasswordConfirmInput.value || "");
-      if (!username || !password) {
-        setSyncError(createSyncTextEntry("sync.error_missing_credentials", "请输入用户名和密码。"));
+      const loginAccount = state.syncAuthMode.value === "register" ? username : account;
+      if (!loginAccount || !password) {
+        setSyncError(createSyncTextEntry("sync.error_missing_credentials", "请输入账号和密码。"));
         return;
       }
       if (state.syncAuthMode.value === "register" && !usernamePattern.test(username)) {
         setSyncError(createSyncTextEntry("sync.error_invalid_username", "用户名只能使用 3-24 位字母、数字或下划线。"));
+        return;
+      }
+      if (state.syncAuthMode.value === "register" && !/^.+@.+\..+$/.test(email)) {
+        setSyncError(createSyncTextEntry("sync.error_invalid_email", "请输入有效邮箱地址。"));
         return;
       }
       if (state.syncAuthMode.value === "register" && password.length < 6) {
@@ -1788,14 +2167,18 @@
         await requestJson(state.syncAuthMode.value === "register" ? "register" : "login", {
           method: "POST",
           body: JSON.stringify({
+            account: loginAccount,
             username,
+            email,
             password,
             "cf-turnstile-response": String(state.syncTurnstileToken.value || ""),
           }),
         });
         writeSessionHint(true);
+        state.syncAccountInput.value = "";
         state.syncPasswordInput.value = "";
         state.syncPasswordConfirmInput.value = "";
+        state.syncEmailInput.value = "";
         destroySyncTurnstileWidget();
         await refreshSyncSession(true);
         setSyncNotice(createSyncTextEntry(
@@ -1812,14 +2195,19 @@
           const tone = syncTurnstileToneByErrorCode(errorCode);
           setSyncTurnstileMessage(turnstileEntry.key, turnstileEntry.fallback, tone || "warning");
         }
-        setSyncError(
-          normalizeSyncMessage(
-            error && error.message ? error.message : "",
-            "sync.error_sync_failed",
-            "Sync failed due to a server error.",
-            error && error.payload ? error.payload : null
-          )
+        const httpStatus = error?.status ? `HTTP ${error.status}` : 'HTTP N/A';
+        const errorDetails = buildSyncErrorDetails(error, {
+          endpoint: state.syncAuthMode.value === "register" ? "register" : "login",
+          method: 'POST',
+        });
+        const message = normalizeSyncMessage(
+          error && error.message ? error.message : '',
+          "sync.error_sync_failed",
+          "同步失败，请稍后重试。",
+          error && error.payload ? error.payload : null
         );
+        const messageWithStatus = `${httpStatus}: ${message}`;
+        setSyncError(messageWithStatus, errorDetails);
       } finally {
         if (isTurnstileEnabled() && !state.syncAuthenticated.value) {
           resetSyncTurnstileWidget({ skipRemount: false });
@@ -1833,7 +2221,7 @@
       const authenticated = Boolean(state.syncAuthenticated.value);
       const useResetCode =
         !authenticated || String(state.syncPasswordChangeMode.value || "current") === "reset_code";
-      const username = String(state.syncUsernameInput.value || "").trim();
+      const account = String(state.syncPasswordResetRequestAccountInput.value || state.syncAccountInput.value || state.syncUsernameInput.value || "").trim();
       const currentPassword = String(state.syncCurrentPasswordInput.value || "");
       const resetCode = String(state.syncResetCodeInput.value || "").trim();
       const newPassword = String(state.syncNewPasswordInput.value || "");
@@ -1849,7 +2237,7 @@
       }
 
       if (useResetCode) {
-        if ((!authenticated && !username) || !resetCode || !newPassword || !confirmPassword) {
+        if ((!authenticated && !account) || !resetCode || !newPassword || !confirmPassword) {
           const message = createSyncTextEntry(
             "sync.error_missing_reset_password_fields",
             "Please enter the required reset-code fields."
@@ -1858,10 +2246,10 @@
           setSyncError(message);
           return;
         }
-        if (!authenticated && !usernamePattern.test(username)) {
+        if (!authenticated && !account) {
           const message = createSyncTextEntry(
-            "sync.error_invalid_username",
-            "Username must be 3-24 letters, numbers, or underscores."
+            "sync.error_missing_reset_password_fields",
+            "请完整填写重置码改密所需信息。"
           );
           state.syncPasswordChangeError.value = resolveSyncEntry(message).text;
           setSyncError(message);
@@ -1904,7 +2292,7 @@
               confirm_password: confirmPassword,
             };
         if (useResetCode && !authenticated) {
-          payload.username = username;
+          payload.account = account;
         }
         const response = await requestJson("change-password", {
           method: "POST",
@@ -1936,7 +2324,7 @@
             writeSessionHint(false);
             resetSyncSessionState();
             if (!authenticated) {
-              state.syncUsernameInput.value = username;
+              state.syncAccountInput.value = account;
             }
             setSyncNotice(successEntry, "info");
             pushSyncToast(
@@ -1968,14 +2356,22 @@
         );
         closeSyncPasswordModal();
       } catch (error) {
+        const httpStatus = error?.status ? `HTTP ${error.status}` : 'HTTP N/A';
+        const errorDetails = sanitizeErrorDetails({
+          status: error?.status,
+          raw: error?.message,
+          payload: error?.payload,
+          message: error?.message
+        });
         const message = normalizeSyncMessage(
-          error && error.message ? error.message : "",
+          '',
           "sync.error_sync_failed",
-          "Sync failed due to a server error.",
+          "同步失败，请稍后重试。",
           error && error.payload ? error.payload : null
         );
-        state.syncPasswordChangeError.value = coerceSyncText(message, "");
-        setSyncError(message);
+        const messageWithStatus = `${httpStatus}: ${message}`;
+        state.syncPasswordChangeError.value = coerceSyncText(messageWithStatus, "");
+        setSyncError(messageWithStatus, errorDetails);
       } finally {
         state.syncBusy.value = false;
       }
@@ -2008,7 +2404,7 @@
     };
 
     const storedMeta = readJsonStorage(syncMetaStorageKey, defaultMeta);
-    const storedPrefs = readJsonStorage(syncPrefsStorageKey, { successToastEnabled: true });
+    const storedPrefs = readJsonStorage(syncPrefsStorageKey, { successToastEnabled: true, autoSyncEnabled: true });
     const storedDevSettingsRaw = isLocalhostFrontend()
       ? readJsonStorage(syncDevStorageKey, { apiBase: "", headerName: "", headerValue: "" })
       : { apiBase: "", headerName: "", headerValue: "" };
@@ -2034,7 +2430,9 @@
     state.syncBusy = ref(false);
     state.syncAuthenticated = ref(false);
     state.syncUser = ref(null);
+    state.syncAccountInput = ref("");
     state.syncUsernameInput = ref("");
+    state.syncEmailInput = ref("");
     state.syncPasswordInput = ref("");
     state.syncPasswordConfirmInput = ref("");
     state.syncCurrentPasswordInput = ref("");
@@ -2044,7 +2442,18 @@
     state.syncChangePasswordConfirmInput = ref("");
     state.syncPasswordChangeError = ref("");
     state.syncPasswordChangeNotice = ref("");
+    state.syncPasswordResetRequestAccountInput = ref("");
     state.syncShowPasswordModal = ref(false);
+    state.syncShowEmailModal = ref(false);
+    state.syncEmailActionMode = ref('change');
+    state.syncEmailActionInput = ref('');
+    state.syncEmailCodeInput = ref('');
+    state.syncEmailActionError = ref('');
+    state.syncEmailActionNotice = ref('');
+    state.syncPaymentChannelInput = ref('alipay');
+    state.syncPaymentReferenceInput = ref('');
+    state.syncPaymentClaimError = ref('');
+    state.syncPaymentClaimNotice = ref('');
     state.syncTurnstileRef = ref(null);
     state.syncTurnstileWidgetId = ref(null);
     state.syncTurnstileToken = ref("");
@@ -2055,9 +2464,8 @@
     state.syncTurnstileMessageTone = ref("info");
     state.syncSessionChecking = ref(false);
     state.syncError = ref("");
+    state.syncErrorDetails = ref("");
     state.syncNotice = ref("");
-    state.syncStatusItems = ref([]);
-    state.syncStatusListRef = ref(null);
     state.syncRemoteData = ref({});
     state.syncRemoteVersion = ref(0);
     state.syncRemoteUpdatedAt = ref("");
@@ -2065,6 +2473,7 @@
     state.syncConflictCurrent = ref(null);
     state.syncConflictConfirmMode = ref("");
     state.syncSuccessToastEnabled = ref(storedPrefs.successToastEnabled !== false);
+    state.syncAutoSyncEnabled = ref(storedPrefs.autoSyncEnabled !== false);
     state.syncApiBaseInput = ref(String(storedDevSettings.apiBase || ""));
     state.syncDevHeaderNameInput = ref(String(storedDevSettings.headerName || ""));
     state.syncDevHeaderValueInput = ref(String(storedDevSettings.headerValue || ""));
@@ -2077,20 +2486,6 @@
     state.syncCurrentComparableHash = computed(() => buildComparableHash(buildLocalComparable()));
     state.syncLastSyncedDisplay = computed(() => formatSyncDateTime(state.syncLastSyncedAt.value));
     state.syncRemoteUpdatedDisplay = computed(() => formatSyncDateTime(state.syncRemoteUpdatedAt.value));
-    state.syncStatusDisplayItems = computed(() => {
-      const items = Array.isArray(state.syncStatusItems.value) ? state.syncStatusItems.value : [];
-      return items.map((item) => Object.assign({}, item, {
-        displayMessage: resolveSyncStatusMessage(item),
-      }));
-    });
-    state.syncStatusRenderItems = computed(() => {
-      const displayItems = Array.isArray(state.syncStatusDisplayItems.value) ? state.syncStatusDisplayItems.value : [];
-      if (displayItems.length) return displayItems;
-      return Array.isArray(state.syncStatusItems.value) ? state.syncStatusItems.value : [];
-    });
-    state.syncHasStatusItems = computed(() =>
-      Array.isArray(state.syncStatusRenderItems.value) && state.syncStatusRenderItems.value.length > 0
-    );
     state.syncAutoSyncText = computed(() => {
       const dueAt = Number(state.syncAutoSyncDueAt.value || 0);
       const seconds = dueAt > 0 ? getAutoSyncRemainingSeconds() : Math.round(autoSyncDelayMs / 1000);
@@ -2098,6 +2493,12 @@
       const lastHash = String(state.syncLastLocalHash.value || "");
       if (!state.syncAuthenticated.value) {
         return getSyncText("sync.auto_sync_signed_out", "登录后开启自动同步");
+      }
+      if (!(state.syncUser.value && state.syncUser.value.auto_sync_allowed)) {
+        return getSyncText("sync.auto_sync_member_only", "当前档位不支持自动同步");
+      }
+      if (!state.syncAutoSyncEnabled.value) {
+        return getSyncText("sync.auto_sync_disabled", "自动同步已关闭");
       }
       if (state.syncConflictDetected.value) {
         return getSyncText("sync.auto_sync_conflict", "已暂停，需先处理同步冲突");
@@ -2150,7 +2551,13 @@
     state.submitSyncAuth = submitSyncAuth;
     state.submitSyncPasswordChange = submitSyncPasswordChange;
     state.openSyncPasswordModal = openSyncPasswordModal;
+    state.requestSyncResetCode = requestSyncResetCode;
     state.closeSyncPasswordModal = closeSyncPasswordModal;
+    state.openSyncEmailModal = openSyncEmailModal;
+    state.closeSyncEmailModal = closeSyncEmailModal;
+    state.submitSyncEmailAction = submitSyncEmailAction;
+    state.sendSyncVerificationCode = sendSyncVerificationCode;
+    state.submitPaymentClaim = submitPaymentClaim;
     state.logoutSync = logoutSync;
     state.performManualSync = performManualSync;
     state.resolveSyncConflictUseServer = resolveSyncConflictUseServer;
@@ -2225,19 +2632,20 @@
       persistPrefs();
     });
 
+    watch(state.syncAutoSyncEnabled, () => {
+      persistPrefs();
+    });
+
     watch(
-      () => {
-        const items = Array.isArray(state.syncStatusItems.value) ? state.syncStatusItems.value : [];
-        return items.length ? items[0].id : "";
-      },
-      (currentId, previousId) => {
-        if (!currentId || currentId === previousId) return;
-        if (typeof nextTick === "function") {
-          nextTick(scrollSyncStatusListToTop);
-          return;
+      () => Boolean(state.syncUser.value && state.syncUser.value.auto_sync_allowed),
+      (allowed) => {
+        if (!allowed) {
+          state.syncAutoSyncEnabled.value = false;
+          clearAutoSyncTimer();
+          persistPrefs();
         }
-        scrollSyncStatusListToTop();
-      }
+      },
+      { immediate: true }
     );
 
     watch(
@@ -2250,7 +2658,9 @@
       ],
       (current, previous) => {
         const [authenticated, busy, conflict, currentHash, lastHash] = current;
-        if (!authenticated || busy || conflict || !currentHash || currentHash === lastHash) {
+        const autoSyncAllowed = Boolean(state.syncUser.value && state.syncUser.value.auto_sync_allowed);
+        const autoSyncEnabled = Boolean(state.syncAutoSyncEnabled.value);
+        if (!authenticated || !autoSyncAllowed || !autoSyncEnabled || busy || conflict || !currentHash || currentHash === lastHash) {
           clearAutoSyncTimer();
           return;
         }
@@ -2304,17 +2714,42 @@
         }
         if (typeof nextTick === "function") {
           nextTick(() => {
-            scrollSyncStatusListToTop();
             void mountSyncTurnstile();
           });
         } else {
-          scrollSyncStatusListToTop();
           void mountSyncTurnstile();
         }
         return;
       }
       scheduleSyncModalCleanup();
     });
+
+    watch(
+      () => [Boolean(state.syncUser && state.syncUser.value && state.syncUser.value.ad_free)],
+      ([adFree]) => {
+        clearAdblockDetectionTimer();
+        state.showAdblockNotice.value = false;
+        state.aboutAdLoaded.value = false;
+        if (adFree) return;
+        const runCheck = () => {
+          if (typeof window !== 'undefined' && typeof window.requestAnimationFrame === 'function') {
+            window.requestAnimationFrame(() => {
+              window.setTimeout(maybeShowAdblockNoticeOnce, 120);
+            });
+            return;
+          }
+          window.setTimeout(maybeShowAdblockNoticeOnce, 120);
+        };
+        if (typeof nextTick === 'function') {
+          nextTick(runCheck);
+        } else {
+          runCheck();
+        }
+      },
+      { immediate: true }
+    );
+
+    state.closeAdblockNotice = closeAdblockNotice;
 
     watch(
       () => [Boolean(state.showSyncModal.value), Boolean(state.syncAuthenticated.value)],

@@ -243,6 +243,15 @@
           </nav>
         </div>
       </header>
+      <section v-if="!syncUser || !syncUser.ad_free" class="hero-ad-banner">
+        <span class="hero-ad-badge">广告/AD</span>
+        <a class="about-button hero-ad-link" href="https://omg10.com/4/10805946" target="_blank" rel="noreferrer sponsored noopener">
+          {{ t("sync.sponsor_link_action") }}
+        </a>
+        <a class="about-button hero-ad-link" href="https://pan.quark.cn/s/27540d6f3706" target="_blank" rel="noreferrer noopener">
+          {{ t("sync.download_background") }}
+        </a>
+      </section>
       <div v-if="showAiNotice" class="ai-notice">
         <span class="ai-chip">{{ t("AI") }}</span>
         <span>{{ t("error.this_language_is_ai_translated_and_may_be_inaccurate_if_") }}</span>

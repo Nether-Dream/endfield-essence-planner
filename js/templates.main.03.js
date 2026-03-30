@@ -490,7 +490,7 @@
                 <div v-if="syncSessionChecking" class="secondary-hint">
                   {{ t("sync.session_checking_hint") }}
                 </div>
-                <div class="sync-auth-field">
+                <div v-if="syncAuthMode === 'register'" class="sync-auth-field">
                   <div class="sync-auth-label">{{ t("sync.username_label") }}</div>
                   <input
                     v-model.trim="syncUsernameInput"
@@ -498,10 +498,33 @@
                     type="text"
                     autocomplete="username"
                     maxlength="24"
-                    pattern="[A-Za-z0-9_]{3,24}"
                     :disabled="syncBusy || syncSessionChecking || syncFrontendBlocked"
                   />
                   <div class="secondary-hint">{{ t("sync.username_hint") }}</div>
+                </div>
+                <div v-else class="sync-auth-field">
+                  <div class="sync-auth-label">{{ t("sync.account_label") }}</div>
+                  <input
+                    v-model.trim="syncAccountInput"
+                    class="secondary-input"
+                    type="text"
+                    autocomplete="username"
+                    maxlength="191"
+                    :disabled="syncBusy || syncSessionChecking || syncFrontendBlocked"
+                  />
+                  <div class="secondary-hint">{{ t("sync.account_hint") }}</div>
+                </div>
+                <div v-if="syncAuthMode === 'register'" class="sync-auth-field">
+                  <div class="sync-auth-label">{{ t("sync.email_label") }}</div>
+                  <input
+                    v-model.trim="syncEmailInput"
+                    class="secondary-input"
+                    type="email"
+                    autocomplete="email"
+                    maxlength="191"
+                    :disabled="syncBusy || syncSessionChecking || syncFrontendBlocked"
+                  />
+                  <div class="secondary-hint">{{ t("sync.email_hint") }}</div>
                 </div>
                 <div class="sync-auth-field">
                   <div class="sync-auth-label">{{ t("sync.password_label") }}</div>
@@ -569,10 +592,14 @@
                   <div v-else class="secondary-hint sync-turnstile-hint">{{ t("sync.turnstile_hint") }}</div>
                 </div>
                 <div class="secondary-hint">{{ t("sync.credentials_hint") }}</div>
-                <div class="secondary-hint">{{ t("sync.password_help_reset_code") }}</div>
+                <div class="secondary-hint">{{ t("sync.password_help_reset_code_email") }}</div>
                 <div v-if="syncError || syncNotice" class="sync-auth-feedback-stack">
                   <div v-if="syncError" class="sync-feedback sync-feedback-error">
                     {{ syncError }}
+                    <details v-if="syncErrorDetails" class="sync-error-details">
+                      <summary>查看详情</summary>
+                      <pre>{{ syncErrorDetails }}</pre>
+                    </details>
                   </div>
                   <div v-else-if="syncNotice" class="sync-feedback sync-feedback-info">
                     {{ syncNotice }}
@@ -638,13 +665,28 @@
                 <div class="sync-status-hero">
                   <div class="sync-status-user-block">
                     <div class="sync-status-avatar">
-                      {{ syncUser && syncUser.username ? syncUser.username.slice(0, 1).toUpperCase() : "?" }}
+                      {{ syncUser && syncUser.username ? syncUser.username.slice(0, 1) : "?" }}
                     </div>
                     <div class="sync-status-user-copy">
                       <div class="secondary-label">{{ t("sync.account_status") }}</div>
-                      <div class="sync-status-user-name">{{ syncUser && syncUser.username ? syncUser.username : "-" }}</div>
+                      <div class="sync-status-user-name">
+                        {{ syncUser && syncUser.username ? syncUser.username : "-" }}
+                        <span v-if="syncUser && syncUser.badge" class="sync-badge-pill">{{ syncUser.badge === 'supporter' ? t('sync.badge_supporter') : syncUser.badge }}</span>
+                      </div>
                       <div class="secondary-hint">
                         {{ t("sync.account_id_hint", { id: syncUser && syncUser.id != null ? syncUser.id : "-" }) }}
+                      </div>
+                      <div class="secondary-hint" v-if="syncUser && syncUser.email">
+                        {{ syncUser.email }}
+                      </div>
+                      <div class="secondary-hint" v-if="syncUser && syncUser.email_verification_required">
+                        {{ t("sync.error_email_verification_required") }}
+                      </div>
+                      <div class="secondary-hint" v-else-if="syncUser && syncUser.email_verified === false">
+                        {{ t("sync.email_unverified_hint", { time: syncUser.email_verification_deadline || '-' }) }}
+                      </div>
+                      <div class="secondary-hint" v-if="syncUser && syncUser.is_trial_active">
+                        {{ t("sync.trial_active_hint", { time: syncUser.premium_trial_until || '-' }) }}
                       </div>
                     </div>
                   </div>
@@ -662,6 +704,12 @@
                       {{ syncAutoSyncText }}
                     </div>
                   </div>
+                  <div class="sync-status-metric">
+                    <div class="sync-status-metric-label">{{ t("sync.storage_tier_label") }}</div>
+                    <div class="sync-status-metric-value sync-status-metric-value-wrap">
+                      {{ syncUser && syncUser.storage_tier === 'premium' ? t("sync.storage_tier_premium") : t("sync.storage_tier_free") }}
+                    </div>
+                  </div>
                 </div>
                 <div class="secondary-actions sync-status-actions">
                   <button class="about-button" :disabled="syncBusy || syncFrontendBlocked" @click="performManualSync">
@@ -669,6 +717,22 @@
                   </button>
                   <button class="ghost-button" :disabled="syncBusy || syncFrontendBlocked" @click="openSyncPasswordModal">
                     {{ t("sync.change_password_open_action") }}
+                  </button>
+                  <button
+                    v-if="syncUser && syncUser.email_verified === false"
+                    class="ghost-button"
+                    :disabled="syncBusy || syncFrontendBlocked"
+                    @click="sendSyncVerificationCode"
+                  >
+                    {{ t("sync.send_verification_code_action") }}
+                  </button>
+                  <button
+                    v-if="syncUser && syncUser.email"
+                    class="ghost-button"
+                    :disabled="syncBusy || syncFrontendBlocked"
+                    @click="openSyncEmailModal"
+                  >
+                    {{ t("sync.change_email_action") }}
                   </button>
                   <button class="ghost-button" :disabled="syncBusy || syncFrontendBlocked" @click="logoutSync">
                     {{ t("sync.logout_action") }}
@@ -679,41 +743,77 @@
                     <input v-model="syncSuccessToastEnabled" type="checkbox" />
                     {{ t("sync.success_toast_toggle") }}
                   </label>
+                  <label class="notice-skip">
+                    <input v-model="syncAutoSyncEnabled" type="checkbox" :disabled="!(syncUser && syncUser.auto_sync_allowed)" />
+                    {{ t("sync.auto_sync_toggle") }}
+                  </label>
                 </div>
               </div>
 
-              <div class="secondary-item">
-                <div class="secondary-label">{{ t("sync.sync_status") }}</div>
-                <div
-                  v-if="syncHasStatusItems"
-                  ref="syncStatusListRef"
-                  class="sync-status-list"
-                >
-                  <div
-                    v-for="item in syncStatusRenderItems"
-                    :key="item.id"
-                    class="sync-feedback sync-feedback-entry"
-                    :class="{
-                      'sync-feedback-ok': item.tone === 'success',
-                      'sync-feedback-error': item.tone === 'error',
-                      'sync-feedback-info': item.tone === 'info',
-                    }"
-                  >
-                    <div class="sync-feedback-head">
-                      <span class="sync-feedback-dot"></span>
-                      <span class="sync-feedback-time">{{ item.timeLabel || "-" }}</span>
-                    </div>
-                    <div class="sync-feedback-text">{{ item.displayMessage || item.message }}</div>
+              <div v-if="syncAuthenticated" class="secondary-item sync-status-card">
+                <div class="secondary-label">{{ t("sync.membership_title") }}</div>
+                <div class="secondary-hint" v-if="syncUser && syncUser.is_premium">
+                  {{ t("sync.membership_active_hint", { time: syncUser.premium_until || '-' }) }}
+                </div>
+                <div class="secondary-hint" v-else-if="syncUser && syncUser.is_trial_active">
+                  {{ t("sync.membership_trial_hint", { time: syncUser.premium_trial_until || '-' }) }}
+                </div>
+                <div class="secondary-hint" v-else>
+                  {{ t("sync.membership_required_hint") }}
+                </div>
+                <div class="sync-summary-grid">
+                  <div class="sync-summary-card">
+                    <div class="secondary-label">{{ t("sync.membership_plan_month") }}</div>
+                    <div class="secondary-hint">¥5.00</div>
+                  </div>
+                  <div class="sync-summary-card">
+                    <div class="secondary-label">{{ t("sync.membership_plan_quarter") }}</div>
+                    <div class="secondary-hint">¥14.25</div>
+                  </div>
+                  <div class="sync-summary-card">
+                    <div class="secondary-label">{{ t("sync.membership_plan_year") }}</div>
+                    <div class="secondary-hint">¥54.00</div>
                   </div>
                 </div>
-                <div v-else class="sync-feedback sync-feedback-empty">
-                  {{ t("sync.status_empty") }}
+                <div class="secondary-hint">{{ t("sync.membership_rights_hint") }}</div>
+                <div class="sync-summary-grid">
+                  <div class="sync-summary-card">
+                    <div class="secondary-label">支付宝</div>
+                    <img class="sync-payment-qr" src="./sponsors/alipay.jpg" alt="Alipay QR" />
+                  </div>
+                  <div class="sync-summary-card">
+                    <div class="secondary-label">微信</div>
+                    <img class="sync-payment-qr" src="./sponsors/wechat.png" alt="WeChat QR" />
+                  </div>
                 </div>
-                <div
-                  v-if="syncHasStatusItems"
-                  class="secondary-actions"
-                >
-                  <button class="ghost-button" @click="clearSyncFeedback">{{ t("sync.clear_message") }}</button>
+                <div class="secondary-hint">{{ t("sync.membership_payment_guide") }}</div>
+                <div class="secondary-hint">{{ t("sync.membership_exact_amount_hint") }}</div>
+                <div class="sync-auth-field">
+                  <label class="secondary-label">{{ t("sync.payment_channel_label") }}</label>
+                  <select v-model="syncPaymentChannelInput" class="secondary-input" :disabled="syncBusy || syncFrontendBlocked">
+                    <option value="alipay">支付宝</option>
+                    <option value="wechat">微信</option>
+                  </select>
+                </div>
+                <div class="sync-auth-field">
+                  <label class="secondary-label">{{ t("sync.payment_reference_label") }}</label>
+                  <input
+                    v-model.trim="syncPaymentReferenceInput"
+                    class="secondary-input"
+                    type="text"
+                    :placeholder="t('sync.payment_reference_hint')"
+                    :disabled="syncBusy || syncFrontendBlocked"
+                    @keydown.enter="submitPaymentClaim"
+                  />
+                </div>
+                <div v-if="syncPaymentClaimError || syncPaymentClaimNotice" class="sync-auth-feedback-stack">
+                  <div v-if="syncPaymentClaimError" class="sync-feedback sync-feedback-error">{{ syncPaymentClaimError }}</div>
+                  <div v-else-if="syncPaymentClaimNotice" class="sync-feedback sync-feedback-info">{{ syncPaymentClaimNotice }}</div>
+                </div>
+                <div class="secondary-actions">
+                  <button class="about-button" :disabled="syncBusy || syncFrontendBlocked" @click="submitPaymentClaim">
+                    {{ t("sync.submit_payment_claim_action") }}
+                  </button>
                 </div>
               </div>
 
@@ -848,21 +948,24 @@
               <div class="secondary-hint">
                 {{ syncAuthenticated && syncPasswordChangeMode === 'current' ? t("sync.change_password_signout_hint") : t(syncAuthenticated ? "sync.reset_password_logged_in_hint" : "sync.reset_password_logged_out_hint") }}
               </div>
-              <div class="secondary-hint">{{ t("sync.password_help_reset_code") }}</div>
-              <div v-if="!syncAuthenticated" class="sync-auth-field">
-                <label class="secondary-label">{{ t("sync.username_label") }}</label>
-                <input
-                  v-model.trim="syncUsernameInput"
+                <div v-if="!syncAuthenticated" class="sync-auth-field">
+                  <label class="secondary-label">{{ t("sync.account_label") }}</label>
+                  <input
+                  v-model.trim="syncPasswordResetRequestAccountInput"
                   class="secondary-input"
                   type="text"
                   autocomplete="username"
-                  maxlength="24"
-                  pattern="[A-Za-z0-9_]{3,24}"
-                  :disabled="syncBusy || syncFrontendBlocked"
-                  @keydown.enter="submitSyncPasswordChange"
-                />
-                <div class="secondary-hint">{{ t("sync.reset_password_logged_out_hint") }}</div>
-              </div>
+                  maxlength="191"
+                    :disabled="syncBusy || syncFrontendBlocked"
+                    @keydown.enter="submitSyncPasswordChange"
+                  />
+                  <div class="secondary-actions" style="margin-top:8px;">
+                    <button class="ghost-button" :disabled="syncBusy || syncFrontendBlocked" @click="requestSyncResetCode">
+                      {{ t("sync.send_reset_code_action") }}
+                    </button>
+                  </div>
+                  <div class="secondary-hint">{{ t("sync.reset_password_request_account_hint") }}</div>
+                </div>
               <div v-if="syncAuthenticated && syncPasswordChangeMode === 'current'" class="sync-auth-field">
                 <label class="secondary-label">{{ t("sync.current_password_label") }}</label>
                 <input
@@ -918,6 +1021,10 @@
               <div v-if="syncPasswordChangeError || syncPasswordChangeNotice" class="sync-auth-feedback-stack">
                 <div v-if="syncPasswordChangeError" class="sync-feedback sync-feedback-error">
                   {{ syncPasswordChangeError }}
+                  <details v-if="syncErrorDetails" class="sync-error-details">
+                    <summary>查看详情</summary>
+                    <pre>{{ syncErrorDetails }}</pre>
+                  </details>
                 </div>
                 <div v-else-if="syncPasswordChangeNotice" class="sync-feedback sync-feedback-info">
                   {{ syncPasswordChangeNotice }}
@@ -929,6 +1036,52 @@
                 {{ syncPasswordChangeMode === 'current' ? t("sync.change_password_action") : t("sync.reset_password_action") }}
               </button>
               <button class="ghost-button" :disabled="syncBusy || syncFrontendBlocked" @click="closeSyncPasswordModal">
+                {{ t("plan_config.close") }}
+              </button>
+            </div>
+          </div>
+        </div>
+      </transition>
+
+      <transition name="fade-scale">
+        <div v-if="showSyncModal && syncShowEmailModal" class="about-overlay sync-overlay" @click.self="closeSyncEmailModal">
+          <div class="about-card notice-card sync-conflict-confirm-card">
+            <h3>{{ t("sync.email_action_title") }}</h3>
+            <div class="about-body">
+              <div class="secondary-hint">
+                {{ syncEmailActionMode === 'verify' ? t("sync.email_verify_hint") : t("sync.email_change_hint") }}
+              </div>
+              <div v-if="syncEmailActionMode === 'change'" class="sync-auth-field">
+                <label class="secondary-label">{{ t("sync.email_label") }}</label>
+                <input
+                  v-model.trim="syncEmailActionInput"
+                  class="secondary-input"
+                  type="email"
+                  autocomplete="email"
+                  :disabled="syncBusy || syncFrontendBlocked"
+                  @keydown.enter="submitSyncEmailAction"
+                />
+              </div>
+              <div v-if="syncEmailActionMode === 'verify'" class="sync-auth-field">
+                <label class="secondary-label">{{ t("sync.email_verification_code_label") }}</label>
+                <input
+                  v-model.trim="syncEmailCodeInput"
+                  class="secondary-input"
+                  type="text"
+                  :disabled="syncBusy || syncFrontendBlocked"
+                  @keydown.enter="submitSyncEmailAction"
+                />
+              </div>
+              <div v-if="syncEmailActionError || syncEmailActionNotice" class="sync-auth-feedback-stack">
+                <div v-if="syncEmailActionError" class="sync-feedback sync-feedback-error">{{ syncEmailActionError }}</div>
+                <div v-else-if="syncEmailActionNotice" class="sync-feedback sync-feedback-info">{{ syncEmailActionNotice }}</div>
+              </div>
+            </div>
+            <div class="about-actions">
+              <button class="about-button" :disabled="syncBusy || syncFrontendBlocked" @click="submitSyncEmailAction">
+                {{ syncEmailActionMode === 'verify' ? t("sync.verify_email_action") : t("sync.change_email_action") }}
+              </button>
+              <button class="ghost-button" :disabled="syncBusy || syncFrontendBlocked" @click="closeSyncEmailModal">
                 {{ t("plan_config.close") }}
               </button>
             </div>
@@ -993,6 +1146,25 @@
               <div class="about-actions">
                 <button class="ghost-button" @click="closeNotice">{{ t("plan_config.close") }}</button>
               </div>
+            </div>
+          </div>
+        </div>
+      </transition>
+
+      <transition name="fade-scale">
+        <div v-if="showAdblockNotice" class="about-overlay notice-overlay">
+          <div class="about-card notice-card adblock-notice-card">
+            <div class="adblock-notice-hero">
+              <img class="adblock-notice-logo" src="./web-app-manifest-512x512.png" alt="Site Logo" loading="eager" decoding="async" />
+              <div class="adblock-notice-copy">
+                <h3>{{ t("sync.adblock_notice_title") }}</h3>
+                <div class="notice-body adblock-notice-body">
+                  <p>{{ t("sync.adblock_notice_text") }}</p>
+                </div>
+              </div>
+            </div>
+            <div class="about-actions">
+              <button class="ghost-button adblock-notice-close-button" @click="closeAdblockNotice()">{{ t("plan_config.close") }}</button>
             </div>
           </div>
         </div>

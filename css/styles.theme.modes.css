@@ -111,6 +111,28 @@ html[data-bg-display="off"][data-theme="light"] body::after {
   color: inherit;
 }
 
+[data-theme="light"] .hero-ad-banner {
+  border-color: rgba(var(--color-black-rgb), var(--alpha-12));
+  background: rgba(255, 255, 255, 0.92);
+  box-shadow: 0 8px 22px rgba(22, 44, 72, 0.08);
+}
+
+[data-theme="light"] .hero-ad-badge {
+  background: rgba(var(--color-warning-rgb), 0.16);
+  color: #8a5200;
+}
+
+[data-theme="light"] .hero-ad-link {
+  border-color: rgba(var(--color-black-rgb), var(--alpha-18));
+  background: rgba(var(--color-white-rgb), var(--alpha-96));
+  color: #173456;
+}
+
+[data-theme="light"] .hero-ad-link:hover {
+  border-color: rgba(var(--color-black-rgb), var(--alpha-26));
+  background: rgba(var(--color-white-rgb), var(--alpha-100));
+}
+
 [data-theme="light"] .about-button.notice-button:hover {
   border-color: #e68a00;
   background: #fff4e6;

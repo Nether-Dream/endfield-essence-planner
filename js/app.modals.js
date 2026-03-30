@@ -227,10 +227,16 @@
       const remindNewNotice = async () => {
         await ensureModalContent(false);
         if (!state.contentLoaded.value) return;
-        const currentVersion = (state.announcement.value || {}).version;
+        const announcement = state.announcement.value || {};
+        const currentVersion = announcement.version;
         if (!currentVersion) return;
         const skippedVersion = readNoticeSkipVersion();
         if (skippedVersion === currentVersion) return;
+        if (announcement.forceModal) {
+          state.skipNotice.value = false;
+          state.showNotice.value = true;
+          return;
+        }
         if (typeof state.pushToastNotice === "function") {
           const title =
             typeof state.t === "function"
