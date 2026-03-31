@@ -820,19 +820,19 @@
                   </div>
                   <div class="sync-summary-grid">
                     <div class="sync-summary-card sync-rights-qr-card">
-                      <div class="secondary-label">支付宝</div>
+                      <div class="secondary-label">{{ t("sync.payment.alipay") }}</div>
                       <img class="sync-payment-qr" src="./sponsors/alipay.jpg" alt="Alipay QR" />
                     </div>
                     <div class="sync-summary-card sync-rights-qr-card">
-                      <div class="secondary-label">微信</div>
+                      <div class="secondary-label">{{ t("sync.payment.wechat") }}</div>
                       <img class="sync-payment-qr" src="./sponsors/wechat.png" alt="WeChat QR" />
                     </div>
                   </div>
                   <div class="sync-auth-field">
                     <label class="secondary-label">{{ t("sync.payment_channel_label") }}</label>
                     <select v-model="syncPaymentChannelInput" class="secondary-input" :disabled="syncBusy || syncFrontendBlocked">
-                      <option value="alipay">支付宝</option>
-                      <option value="wechat">微信</option>
+                      <option value="alipay">{{ t("sync.payment.alipay") }}</option>
+                      <option value="wechat">{{ t("sync.payment.wechat") }}</option>
                     </select>
                   </div>
                   <div class="sync-auth-field">

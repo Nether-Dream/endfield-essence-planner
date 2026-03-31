@@ -903,6 +903,8 @@ Object.assign(window.I18N["ja"].strings, {
   "sync.payment_reference_label": "支払い証憑",
   "sync.payment_reference_hint": "Alipay の注文番号または WeChat の振替伝票番号を入力してください",
   "sync.submit_payment_claim_action": "支払い証憑を送信",
+  "sync.payment.alipay": "Alipay",
+  "sync.payment.wechat": "WeChat",
   "sync.payment_claim_pending_notice": "支払い証憑を送信しました。システム審査待ちです。",
   "sync.payment_claim_matched_notice": "支払い照合に成功しました。会員は自動で有効化されました。",
   "sync.error_invalid_payment_claim": "先に支払い方法を選び、支払い証憑を入力してください。",

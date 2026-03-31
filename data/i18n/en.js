@@ -847,6 +847,8 @@ Object.assign(window.I18N["en"].strings, {
   "sync.verification_code_sent_notice": "A verification code has been sent. Please check your email.",
   "sync.email_verified_notice": "Email verification completed.",
   "sync.email_change_notice": "Email updated or a verification email has been sent.",
+  "sync.payment.alipay": "Alipay",
+  "sync.payment.wechat": "WeChat",
   "sync.payment_claim_pending_notice": "Your payment reference has been submitted and is waiting for review.",
   "sync.payment_claim_matched_notice": "Payment matched successfully. Membership has been activated automatically.",
   "sync.dev_settings_saved": "Development settings saved.",

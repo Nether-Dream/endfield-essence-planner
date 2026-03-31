@@ -903,6 +903,8 @@ Object.assign(window.I18N["zh-TW"].strings, {
   "sync.payment_reference_label": "支付憑證",
   "sync.payment_reference_hint": "請輸入支付寶訂單號或微信轉帳單號",
   "sync.submit_payment_claim_action": "提交支付憑證",
+  "sync.payment.alipay": "支付寶",
+  "sync.payment.wechat": "微信",
   "sync.payment_claim_pending_notice": "支付憑證已提交，等待系統審核。",
   "sync.payment_claim_matched_notice": "支付憑證匹配成功，會員已自動開通。",
   "sync.error_invalid_payment_claim": "請先選擇支付方式並填寫支付憑證。",

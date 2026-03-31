@@ -7,6 +7,7 @@
     const syncPrefsStorageKey = state.syncPrefsStorageKey || "planner-sync-prefs:v1";
     const syncDevStorageKey = state.syncDevStorageKey || "planner-sync-dev:v1";
     const syncSessionHintStorageKey = state.syncSessionHintStorageKey || "planner-session-hint:v1";
+    const syncEmailToastSessionKey = state.syncEmailToastSessionKey || "planner-sync-email-toast:v1";
     const syncPlanToastSessionKey = state.syncPlanToastSessionKey || "planner-sync-plan-toast:v1";
     const syncRestrictionToastSessionKey = state.syncRestrictionToastSessionKey || "planner-sync-restriction-toast:v1";
     const getDefaultApiBase = () => "https://ldy.canmoe.com/api";

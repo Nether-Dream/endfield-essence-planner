@@ -818,6 +818,8 @@ Object.assign(window.I18N["zh-CN"].strings, {
   "sync.email_change_notice": "邮箱已更新或已发送验证邮件。",
   "sync.payment_claim_pending_notice": "支付凭证已提交，等待系统审核。",
   "sync.payment_claim_matched_notice": "支付凭证匹配成功，会员已自动开通。",
+  "sync.payment.alipay": "支付宝",
+  "sync.payment.wechat": "微信",
   "sync.dev_settings_saved": "开发设置已保存。",
   "sync.already_up_to_date": "当前设备与云端已经一致。",
   "sync.no_data_notice": "本地和云端都还没有可同步的数据。",
