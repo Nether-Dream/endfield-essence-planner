@@ -2003,6 +2003,8 @@
         syncPaymentReferenceInput: state.syncPaymentReferenceInput,
         syncPaymentClaimError: state.syncPaymentClaimError,
         syncPaymentClaimNotice: state.syncPaymentClaimNotice,
+        syncUserPaymentClaims: state.syncUserPaymentClaims,
+        showSyncRightsDetails: state.showSyncRightsDetails,
         syncTurnstileRef: state.syncTurnstileRef,
         syncTurnstileLoading: state.syncTurnstileLoading,
         syncTurnstileUnavailable: state.syncTurnstileUnavailable,

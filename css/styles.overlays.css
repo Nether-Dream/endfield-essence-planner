@@ -1393,8 +1393,8 @@
 
       .version-debug-badge-wrap {
         position: fixed;
-        top: calc(8px + min(var(--app-safe-top-inset, 0px), var(--app-safe-top-cap, 16px)));
-        left: calc(8px + var(--app-safe-left-inset, 0px));
+        top: 8px;
+        left: 8px;
         pointer-events: auto;
         z-index: calc(var(--z-index-update-toast) + 10);
       }
@@ -2007,8 +2007,8 @@
         }
 
         .version-debug-badge-wrap {
-          left: calc(6px + var(--app-safe-left-inset, 0px));
-          top: calc(6px + var(--app-safe-top-inset, 0px));
+          left: 6px;
+          top: 6px;
         }
 
         .version-debug-badge {

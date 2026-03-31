@@ -66,6 +66,9 @@
             <span class="profile-entry-label">
               {{ syncAuthenticated && syncUser && syncUser.username ? syncUser.username : t("sync.login_action") }}
             </span>
+            <span v-if="syncAuthenticated && syncUser && syncUser.badge" class="sync-badge-pill profile-entry-badge">
+              {{ syncUser.badge === 'supporter' ? t('sync.badge_supporter') : syncUser.badge }}
+            </span>
           </button>
           <div class="secondary-menu">
             <button class="about-button menu-toggle" @click="showSecondaryMenu = !showSecondaryMenu">
@@ -243,9 +246,9 @@
           </nav>
         </div>
       </header>
-      <section v-if="!syncUser || !syncUser.ad_free" class="hero-ad-banner">
+      <section v-if="!syncAuthenticated || (syncUser && !syncUser.ad_free)" class="hero-ad-banner">
         <span class="hero-ad-badge">广告/AD</span>
-        <a class="about-button hero-ad-link" href="https://omg10.com/4/10805946" target="_blank" rel="noreferrer sponsored noopener">
+        <a class="about-button hero-ad-link hero-ad-primary" href="https://omg10.com/4/10805946" target="_blank" rel="noreferrer sponsored noopener">
           {{ t("sync.sponsor_link_action") }}
         </a>
         <a class="about-button hero-ad-link" href="https://pan.quark.cn/s/27540d6f3706" target="_blank" rel="noreferrer noopener">

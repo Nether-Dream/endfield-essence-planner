@@ -1232,6 +1232,7 @@
 
     let heroActionsOffsetRaf = null;
     let heroActionsOffsetTimer = null;
+    let heroActionsResizeObserver = null;
     const heroActionsOffsetFallback = 0;
     const heroActionsOffsetVar = "--toast-hero-actions-top";
     const setHeroActionsOffset = (value) => {
@@ -1255,6 +1256,10 @@
       setHeroActionsOffset(top);
     };
     const scheduleHeroActionsOffset = () => {
+      if (typeof requestAnimationFrame !== "function") {
+        measureHeroActionsOffset();
+        return;
+      }
       if (heroActionsOffsetRaf) {
         cancelAnimationFrame(heroActionsOffsetRaf);
         heroActionsOffsetRaf = null;
@@ -1303,6 +1308,16 @@
         window.addEventListener("resize", scheduleHeroActionsOffset);
         window.addEventListener("orientationchange", scheduleHeroActionsOffset);
         window.addEventListener("pageshow", scheduleHeroActionsOffset);
+        window.addEventListener("scroll", scheduleHeroActionsOffset, { passive: true });
+        if (typeof window.ResizeObserver === "function" && typeof document !== "undefined") {
+          const heroActions = document.querySelector(".hero-actions");
+          if (heroActions) {
+            heroActionsResizeObserver = new window.ResizeObserver(() => {
+              scheduleHeroActionsOffset();
+            });
+            heroActionsResizeObserver.observe(heroActions);
+          }
+        }
         updateViewportSafeBottom();
         window.addEventListener("resize", scheduleViewportSafeBottom);
         if (window.visualViewport) {
@@ -1349,6 +1364,11 @@
         window.removeEventListener("resize", scheduleHeroActionsOffset);
         window.removeEventListener("orientationchange", scheduleHeroActionsOffset);
         window.removeEventListener("pageshow", scheduleHeroActionsOffset);
+        window.removeEventListener("scroll", scheduleHeroActionsOffset);
+      }
+      if (heroActionsResizeObserver) {
+        heroActionsResizeObserver.disconnect();
+        heroActionsResizeObserver = null;
       }
       clearBackToTopTimer();
       if (optionalFailurePollTimer) {

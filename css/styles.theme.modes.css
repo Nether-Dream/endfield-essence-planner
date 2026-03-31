@@ -517,6 +517,23 @@ html[data-bg-display="off"][data-theme="light"] body::after {
   background: rgba(var(--color-white-rgb), var(--alpha-56));
 }
 
+[data-theme="light"] .sync-rights-price-discount {
+  color: #9b5b00;
+}
+
+[data-theme="light"] .sync-rights-table th,
+[data-theme="light"] .sync-rights-table td {
+  border-color: rgba(var(--color-black-rgb), var(--alpha-10));
+}
+
+[data-theme="light"] .sync-rights-value-positive {
+  color: #1f8d5d;
+}
+
+[data-theme="light"] .sync-rights-value-negative {
+  color: #c03a2b;
+}
+
 [data-theme="light"] .sync-feedback-ok {
   border-color: rgba(var(--color-ok-rgb), var(--alpha-36));
   background: rgba(var(--color-ok-rgb), var(--alpha-12));

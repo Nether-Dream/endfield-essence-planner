@@ -28,6 +28,8 @@
     state.showFaq = ref(false);
     state.showSyncModal = ref(false);
     state.showSecondaryMenu = ref(false);
+    state.showSyncRightsDetails = ref(false);
+    state.syncUserPaymentClaims = ref([]);
 
     state.contentLoading = ref(false);
     state.contentLoaded = ref(Boolean(window.CONTENT));

@@ -7,6 +7,8 @@
     const syncPrefsStorageKey = state.syncPrefsStorageKey || "planner-sync-prefs:v1";
     const syncDevStorageKey = state.syncDevStorageKey || "planner-sync-dev:v1";
     const syncSessionHintStorageKey = state.syncSessionHintStorageKey || "planner-session-hint:v1";
+    const syncPlanToastSessionKey = state.syncPlanToastSessionKey || "planner-sync-plan-toast:v1";
+    const syncRestrictionToastSessionKey = state.syncRestrictionToastSessionKey || "planner-sync-restriction-toast:v1";
     const getDefaultApiBase = () => "https://ldy.canmoe.com/api";
     const devHostPattern = /^(localhost|127\.0\.0\.1)$/i;
     const defaultMeta = {
@@ -45,6 +47,7 @@
     let syncTurnstileMountPromise = null;
     let syncTurnstileMountVersion = 0;
     let adblockDetectionTimer = null;
+    let lastAutoSyncEntitlement = false;
 
     const getRefValue = (target, fallback) =>
       target && typeof target === "object" && "value" in target ? target.value : fallback;
@@ -352,17 +355,23 @@
       }
     };
 
-    const pushSyncToast = (tone, titleKey, summaryKey, fallbackTitle, fallbackSummary, signature) => {
+    const pushSyncToast = (tone, titleKey, summaryKey, fallbackTitle, fallbackSummary, signature, options) => {
       if (typeof state.pushToastNotice !== "function") return;
+      const summary = typeof state.t === "function"
+        ? state.t(summaryKey, options && options.summaryParams ? options.summaryParams : undefined)
+        : fallbackSummary;
       state.pushToastNotice(
         {
           title: typeof state.t === "function" ? state.t(titleKey) : fallbackTitle,
-          summary: typeof state.t === "function" ? state.t(summaryKey) : fallbackSummary,
+          summary,
           tone,
           icon: tone === "danger" ? "!" : tone === "success" ? "✓" : "i",
-          durationMs: tone === "danger" ? 9000 : 3600,
+          durationMs: options && Number.isFinite(options.durationMs)
+            ? options.durationMs
+            : (tone === "danger" ? 9000 : 3600),
           signature,
           ariaLabel: typeof state.t === "function" ? state.t(titleKey) : fallbackTitle,
+          onActivate: options && typeof options.onActivate === "function" ? options.onActivate : null,
         },
         {
           signature,
@@ -925,17 +934,25 @@
         username_taken: "sync.error_username_taken",
         weak_password: "sync.error_weak_password",
         invalid_current_password: "sync.error_invalid_current_password",
+        bad_request: "sync.error_bad_request",
         invalid_reset_code: "sync.error_invalid_reset_code",
         reset_code_unavailable: "sync.error_reset_code_unavailable",
         password_mismatch: "sync.error_password_mismatch",
         account_disabled: "sync.error_account_disabled",
         email_unavailable: "sync.error_email_unavailable",
         email_send_failed: "sync.error_email_send_failed",
-        register_conflict: "sync.error_register_conflict",
+        email_taken: "sync.error_email_taken",
+        invalid_verification_code: "sync.error_invalid_verification_code",
+        invalid_payment_claim: "sync.error_invalid_payment_claim",
+        payment_claim_duplicate: "sync.error_payment_claim_duplicate",
         payment_claim_failed: "sync.error_payment_claim_failed",
+        register_conflict: "sync.error_register_conflict",
         unauthorized: "sync.error_unauthorized",
         invalid_payload: "sync.error_invalid_payload",
+        payload_too_large: "sync.error_payload_too_large",
         auth_failed: "sync.error_auth_failed",
+        premium_required: "sync.error_premium_required",
+        email_verification_required: "sync.error_email_verification_required",
         turnstile_required: "sync.error_turnstile_required",
         turnstile_failed: "sync.error_turnstile_failed",
         turnstile_unavailable: "sync.error_turnstile_unavailable",
@@ -1008,6 +1025,10 @@
         }
         return text;
       };
+      const translatedByCode = translateSyncError(errorCode);
+      if (translatedByCode && translatedByCode !== errorCode) {
+        return maybeAppendSupportHint(translatedByCode);
+      }
       const backendMessage = getPreferredBackendMessage(payload);
       const raw = coerceSyncText(backendMessage || message, "");
       const translated = translateSyncError(raw);
@@ -1122,6 +1143,24 @@
       }
     };
 
+    const readEmailToastSignature = () => {
+      if (typeof window === 'undefined') return '';
+      try {
+        return window.sessionStorage ? String(window.sessionStorage.getItem(syncEmailToastSessionKey) || '') : '';
+      } catch (error) {
+        return '';
+      }
+    };
+
+    const writeEmailToastSignature = (value) => {
+      if (typeof window === 'undefined') return;
+      try {
+        if (window.sessionStorage) window.sessionStorage.setItem(syncEmailToastSessionKey, String(value || ''));
+      } catch (error) {
+        // ignore storage issues
+      }
+    };
+
     const closeAdblockNotice = () => {
       state.showAdblockNotice.value = false;
       writeAdblockDismissedInSession();
@@ -1131,15 +1170,15 @@
       if (typeof document === 'undefined' || typeof window === 'undefined') {
         return { exists: false, visible: false, hidden: false, collapsed: false };
       }
-      const adContainer = document.querySelector('.hero-ad-banner');
-      if (!adContainer) {
+      const adTarget = document.querySelector('.hero-ad-banner');
+      if (!adTarget) {
         return { exists: false, visible: false, hidden: false, collapsed: false };
       }
-      const rect = typeof adContainer.getBoundingClientRect === 'function'
-        ? adContainer.getBoundingClientRect()
+      const rect = typeof adTarget.getBoundingClientRect === 'function'
+        ? adTarget.getBoundingClientRect()
         : { width: 0, height: 0 };
       const styles = typeof window.getComputedStyle === 'function'
-        ? window.getComputedStyle(adContainer)
+        ? window.getComputedStyle(adTarget)
         : null;
       const hidden = styles
         ? styles.display === 'none' || styles.visibility === 'hidden' || Number(styles.opacity || 1) === 0
@@ -1163,11 +1202,18 @@
     const maybeShowAdblockNoticeOnce = () => {
       if (typeof document === 'undefined' || typeof window === 'undefined') return;
       if (readAdblockDismissedInSession()) return;
+      const shouldShowHeroAd = !Boolean(state.syncAuthenticated.value && state.syncUser.value && state.syncUser.value.ad_free);
+      if (!shouldShowHeroAd) {
+        clearAdblockDetectionTimer();
+        state.aboutAdLoaded.value = false;
+        state.showAdblockNotice.value = false;
+        return;
+      }
       clearAdblockDetectionTimer();
       state.aboutAdLoaded.value = false;
       state.showAdblockNotice.value = false;
       const firstPass = getHeroAdVisibilityState();
-      if (firstPass.visible) {
+      if (firstPass.exists && firstPass.visible) {
         state.aboutAdLoaded.value = true;
         return;
       }
@@ -1175,14 +1221,15 @@
         adblockDetectionTimer = null;
         if (readAdblockDismissedInSession()) return;
         const secondPass = getHeroAdVisibilityState();
-        if (secondPass.visible) {
+        if (secondPass.exists && secondPass.visible) {
           state.aboutAdLoaded.value = true;
           state.showAdblockNotice.value = false;
           return;
         }
+        const blocked = secondPass.exists ? !secondPass.visible : !firstPass.exists;
         state.aboutAdLoaded.value = false;
-        state.showAdblockNotice.value = true;
-      }, 360);
+        state.showAdblockNotice.value = Boolean(blocked);
+      }, 2400);
     };
 
     const clearSyncConflictUiState = () => {
@@ -1412,6 +1459,9 @@
       if (state.syncPasswordChangeNotice && "value" in state.syncPasswordChangeNotice) {
         state.syncPasswordChangeNotice.value = "";
       }
+      if (!state.syncAuthenticated.value && state.syncPasswordResetRequestAccountInput && "value" in state.syncPasswordResetRequestAccountInput) {
+        state.syncPasswordResetRequestAccountInput.value = String(state.syncAccountInput.value || "").trim();
+      }
     };
 
     const closeSyncEmailModal = () => {
@@ -1438,7 +1488,7 @@
     const openSyncEmailModal = () => {
       if (!ensureSyncFrontendAllowed()) return;
       state.syncShowEmailModal.value = true;
-      state.syncEmailActionMode.value = state.syncUser.value && state.syncUser.value.email_verified === false ? 'verify' : 'change';
+      state.syncEmailActionMode.value = 'change';
       state.syncEmailActionInput.value = state.syncUser.value && state.syncUser.value.pending_email
         ? String(state.syncUser.value.pending_email)
         : (state.syncUser.value && state.syncUser.value.email ? String(state.syncUser.value.email) : '');
@@ -1449,29 +1499,39 @@
 
     const sendSyncVerificationCode = async () => {
       if (!state.syncAuthenticated.value) return;
+      const currentEmail = state.syncUser && state.syncUser.value && state.syncUser.value.email ? state.syncUser.value.email : '';
+      if (!currentEmail) {
+        const message = createSyncTextEntry('sync.error_email_unavailable', '当前没有可用于接收验证码的邮箱。');
+        state.syncEmailActionError.value = resolveSyncEntry(message).text;
+        setSyncError(message);
+        return;
+      }
+      state.syncEmailActionNotice.value = typeof state.t === 'function' ? state.t('sync.email_sending_notice') : '正在发送验证码...';
       state.syncBusy.value = true;
       try {
         await requestJson('change-email', {
           method: 'POST',
-          body: JSON.stringify({ email: state.syncUser && state.syncUser.value && state.syncUser.value.email ? state.syncUser.value.email : '' }),
+          body: JSON.stringify({ email: currentEmail }),
         });
         const notice = createSyncTextEntry('sync.verification_code_sent_notice', '验证码已发送，请查收邮箱。');
+        state.syncEmailActionNotice.value = resolveSyncEntry(notice).text;
         setSyncNotice(notice, 'info');
       } catch (error) {
         handleSyncRequestFailure(error, 'sync.error_sync_failed', '同步失败，请稍后重试。');
-        state.syncPasswordChangeError.value = state.syncError.value;
+        state.syncEmailActionError.value = state.syncError.value;
       } finally {
         state.syncBusy.value = false;
       }
     };
 
-    const submitSyncEmailAction = async () => {
+    const submitSyncEmailAction = async (mode) => {
       if (!state.syncAuthenticated.value) return;
       state.syncEmailActionError.value = '';
       state.syncEmailActionNotice.value = '';
       state.syncBusy.value = true;
       try {
-        if (state.syncEmailActionMode.value === 'verify') {
+        if ((mode || state.syncEmailActionMode.value) === 'verify') {
+          state.syncEmailActionNotice.value = typeof state.t === 'function' ? state.t('sync.email_verifying_notice') : '正在验证邮箱...';
           await requestJson('verify-email', {
             method: 'POST',
             body: JSON.stringify({ code: String(state.syncEmailCodeInput.value || '').trim() }),
@@ -1484,6 +1544,7 @@
           return;
         }
 
+        state.syncEmailActionNotice.value = typeof state.t === 'function' ? state.t('sync.email_changing_notice') : '正在修改邮箱...';
         await requestJson('change-email', {
           method: 'POST',
           body: JSON.stringify({ email: String(state.syncEmailActionInput.value || '').trim() }),
@@ -1493,10 +1554,8 @@
         await refreshSyncSession(true);
         setSyncNotice(notice, 'info');
       } catch (error) {
-        const result = handleSyncRequestFailure(error, 'sync.error_sync_failed', '同步失败，请稍后重试。');
-        if (result !== 'error') {
-          state.syncEmailActionError.value = state.syncError.value;
-        }
+        handleSyncRequestFailure(error, 'sync.error_sync_failed', '同步失败，请稍后重试。');
+        state.syncEmailActionError.value = state.syncError.value;
       } finally {
         state.syncBusy.value = false;
       }
@@ -1532,23 +1591,25 @@
         state.syncPaymentReferenceInput.value = '';
         await refreshSyncSession(true);
         setSyncNotice(notice, 'info');
+        pushSyncToast(
+          status === 'matched_auto' ? 'success' : 'info',
+          status === 'matched_auto' ? 'sync.payment_claim_matched_title' : 'sync.payment_claim_pending_title',
+          status === 'matched_auto' ? 'sync.payment_claim_matched_notice' : 'sync.payment_claim_pending_notice',
+          status === 'matched_auto' ? '支付匹配成功' : '支付凭证已提交',
+          resolveSyncEntry(notice).text,
+          `sync-payment-claim:${status}:${result && result.claim ? result.claim.id : 'unknown'}`
+        );
       } catch (error) {
         const result = handleSyncRequestFailure(error, 'sync.error_sync_failed', '同步失败，请稍后重试。');
-        if (result !== 'error') {
-          state.syncPaymentClaimError.value = state.syncError.value;
-        }
+        state.syncPaymentClaimError.value = state.syncError.value;
+        pushSyncToast('danger', 'sync.payment_claim_failed_title', 'sync.payment_claim_failed_summary', '支付凭证提交失败', state.syncError.value || '支付凭证提交失败。', `sync-payment-claim-error:${result || 'error'}`);
       } finally {
         state.syncBusy.value = false;
       }
     };
 
     const requestSyncResetCode = async () => {
-      const account = String(
-        state.syncPasswordResetRequestAccountInput.value ||
-        state.syncAccountInput.value ||
-        state.syncUsernameInput.value ||
-        ""
-      ).trim();
+      const account = String(state.syncPasswordResetRequestAccountInput.value || "").trim();
       if (!account) {
         const message = createSyncTextEntry(
           "sync.error_missing_reset_password_fields",
@@ -1572,6 +1633,7 @@
         setSyncNotice(notice, "info");
       } catch (error) {
         handleSyncRequestFailure(error, "sync.error_sync_failed", "同步失败，请稍后重试。");
+        state.syncPasswordChangeError.value = state.syncError.value;
       } finally {
         state.syncBusy.value = false;
       }
@@ -1636,15 +1698,171 @@
       if (options && options.silent) return;
     };
 
-    const handleSyncRestrictedAccount = (errorCode) => {
+    const handleSyncRestrictedAccount = (errorCode, options) => {
       const key = errorCode === "email_verification_required"
         ? "sync.error_email_verification_required"
         : "sync.error_premium_required";
       const fallback = errorCode === "email_verification_required"
-        ? "邮箱验证已超期，请先完成邮箱验证。"
-        : "当前账号未开通有效试用或会员，暂不可使用云同步。";
-      setSyncError(createSyncTextEntry(key, fallback));
+        ? "邮箱验证已超期，部分同步功能已受限，请先完成邮箱验证。"
+        : "当前档位不支持自动同步，免费计划仅支持手动同步。";
+      setSyncRestrictionState(errorCode);
+      const entry = createSyncTextEntry(key, fallback);
+      setSyncError(entry);
+      if (options && options.toastOnRestricted) {
+        const resolved = resolveSyncEntry(entry);
+        const source = String(options.source || "restricted");
+        const signature = `sync-restricted:${errorCode}:${source}`;
+        pushSyncToast(
+          errorCode === "email_verification_required" ? "warning" : "info",
+          errorCode === "email_verification_required" ? "sync.email_verification_overdue_title" : "sync.plan_expired_title",
+          key,
+          errorCode === "email_verification_required" ? "邮箱验证已超期" : "自动同步不可用",
+          resolved.text || fallback,
+          signature,
+          {
+            durationMs: 12000,
+            onActivate: typeof state.openSyncModal === "function" ? () => state.openSyncModal() : null,
+          }
+        );
+      }
       return errorCode;
+    };
+
+    const readPlanToastSignature = () => {
+      if (typeof window === "undefined") return "";
+      try {
+        return window.sessionStorage ? String(window.sessionStorage.getItem(syncPlanToastSessionKey) || "") : "";
+      } catch (error) {
+        return "";
+      }
+    };
+
+    const writePlanToastSignature = (value) => {
+      if (typeof window === "undefined") return;
+      try {
+        if (window.sessionStorage) window.sessionStorage.setItem(syncPlanToastSessionKey, String(value || ""));
+      } catch (error) {
+        // ignore storage issues
+      }
+    };
+
+    const readRestrictionToastSignature = () => {
+      if (typeof window === "undefined") return "";
+      try {
+        return window.sessionStorage ? String(window.sessionStorage.getItem(syncRestrictionToastSessionKey) || "") : "";
+      } catch (error) {
+        return "";
+      }
+    };
+
+    const writeRestrictionToastSignature = (value) => {
+      if (typeof window === "undefined") return;
+      try {
+        if (window.sessionStorage) window.sessionStorage.setItem(syncRestrictionToastSessionKey, String(value || ""));
+      } catch (error) {
+        // ignore storage issues
+      }
+    };
+
+    const clearSyncRestrictionState = (errorCode) => {
+      if (!state.syncRestrictionCode || !("value" in state.syncRestrictionCode)) return;
+      if (errorCode && state.syncRestrictionCode.value !== errorCode) return;
+      state.syncRestrictionCode.value = "";
+    };
+
+    const setSyncRestrictionState = (errorCode, options) => {
+      const code = String(errorCode || "").trim();
+      if (!code) return;
+      if (state.syncRestrictionCode && "value" in state.syncRestrictionCode) {
+        state.syncRestrictionCode.value = code;
+      }
+      clearAutoSyncTimer();
+      if (code !== "email_verification_required") return;
+      const signature = `restriction:${code}:${String((state.syncUser.value && state.syncUser.value.email_verification_deadline) || "none")}`;
+      if (readRestrictionToastSignature() === signature) return;
+      writeRestrictionToastSignature(signature);
+      pushSyncToast(
+        "warning",
+        "sync.email_verification_overdue_title",
+        "sync.email_verification_overdue_notice",
+        "邮箱验证已超期",
+        "邮箱验证已超期，部分同步功能已受限，请先完成邮箱验证。",
+        signature,
+        {
+          durationMs: 12000,
+          onActivate: typeof state.openSyncModal === "function" ? () => state.openSyncModal() : null,
+        }
+      );
+      if (options && options.messageOnly) return;
+    };
+
+    const maybeNotifyPlanStatus = (me, previousUser) => {
+      if (!me || typeof me !== "object") return;
+      const planTier = String(me.plan_tier || "free");
+      const planExpiresAt = String(me.plan_expires_at || me.premium_until || me.premium_trial_until || "");
+      const expiringSoon = Boolean(me.plan_expiring_soon);
+      const expired = Boolean(me.plan_expired);
+      const autoSyncAllowed = Boolean(me.auto_sync_allowed);
+      const previousAutoSyncAllowed = Boolean(previousUser && previousUser.auto_sync_allowed);
+      const previousPlanTier = String(previousUser && previousUser.plan_tier ? previousUser.plan_tier : "");
+
+      if (expiringSoon && planExpiresAt) {
+        const expirySignature = `plan-expiring:${planTier}:${planExpiresAt}`;
+        if (readPlanToastSignature() !== expirySignature) {
+          writePlanToastSignature(expirySignature);
+          pushSyncToast(
+            "warning",
+            "sync.plan_expiring_title",
+            "sync.plan_expiring_notice",
+            "同步权益即将到期",
+            `当前同步权益将于 ${planExpiresAt} 到期。到期后将切换为免费计划，仅保留手动同步。`,
+            expirySignature,
+            {
+              durationMs: 12000,
+              summaryParams: { time: planExpiresAt },
+              onActivate: typeof state.openSyncModal === "function" ? () => state.openSyncModal() : null,
+            }
+          );
+        }
+      }
+
+      if (expired && previousPlanTier && previousPlanTier !== "free") {
+        const expiredSignature = `plan-expired:${planTier}:${planExpiresAt || "none"}`;
+        if (readPlanToastSignature() !== expiredSignature) {
+          writePlanToastSignature(expiredSignature);
+          pushSyncToast(
+            "info",
+            "sync.plan_expired_title",
+            "sync.plan_expired_notice",
+            "已切换为免费计划",
+            "同步权益已到期，当前已切换为免费计划，仅支持手动同步。",
+            expiredSignature,
+            {
+              durationMs: 12000,
+              onActivate: typeof state.openSyncModal === "function" ? () => state.openSyncModal() : null,
+            }
+          );
+        }
+      }
+
+      if (autoSyncAllowed && !previousAutoSyncAllowed && !state.syncAutoSyncEnabled.value) {
+        const restoredSignature = `auto-sync-restored:${planTier}:${planExpiresAt || "none"}`;
+        if (readPlanToastSignature() !== restoredSignature) {
+          writePlanToastSignature(restoredSignature);
+          pushSyncToast(
+            "info",
+            "sync.auto_sync_available_title",
+            "sync.auto_sync_available_notice",
+            "自动同步现已可用",
+            "当前档位已恢复自动同步权益。如有需要，可重新打开自动同步。",
+            restoredSignature,
+            {
+              durationMs: 10000,
+              onActivate: typeof state.openSyncModal === "function" ? () => state.openSyncModal() : null,
+            }
+          );
+        }
+      }
     };
 
     const handleSyncKnownBusinessError = (errorCode, error) => {
@@ -1664,6 +1882,10 @@
         invalid_email: {
           key: 'sync.error_invalid_email',
           fallback: '请输入有效邮箱地址。',
+        },
+        bad_request: {
+          key: 'sync.error_bad_request',
+          fallback: '请求参数异常，请检查后重试。',
         },
         email_unavailable: {
           key: 'sync.error_email_unavailable',
@@ -1689,6 +1911,46 @@
           key: 'sync.error_payment_claim_failed',
           fallback: '支付凭证提交失败，请稍后重试。',
         },
+        payment_claim_duplicate: {
+          key: 'sync.error_payment_claim_duplicate',
+          fallback: '该支付凭证已提交过，不能重复提交。',
+        },
+        rate_limited: {
+          key: 'sync.error_rate_limited',
+          fallback: '请求过于频繁，请稍后再试。',
+        },
+        weak_password: {
+          key: 'sync.error_weak_password',
+          fallback: '密码至少需要 6 位。',
+        },
+        password_mismatch: {
+          key: 'sync.error_password_mismatch',
+          fallback: '两次输入的密码不一致。',
+        },
+        invalid_current_password: {
+          key: 'sync.error_invalid_current_password',
+          fallback: '当前密码不正确。',
+        },
+        reset_code_unavailable: {
+          key: 'sync.error_reset_code_unavailable',
+          fallback: '服务器尚未启用重置码功能，请联系开发者。',
+        },
+        invalid_payload: {
+          key: 'sync.error_invalid_payload',
+          fallback: '同步数据格式无效。',
+        },
+        payload_too_large: {
+          key: 'sync.error_payload_too_large',
+          fallback: '当前数据超过当前档位允许的同步大小限制，请减少数据后重试。',
+        },
+        invalid_payment_claim: {
+          key: 'sync.error_invalid_payment_claim',
+          fallback: '请先选择支付方式并填写支付凭证。',
+        },
+        auth_failed: {
+          key: 'sync.error_auth_failed',
+          fallback: '身份验证失败。',
+        },
       };
       const matched = knownMap[errorCode];
       if (!matched) return false;
@@ -1708,7 +1970,7 @@
         return "maintenance_mode";
       }
       if (errorCode === "email_verification_required" || errorCode === "premium_required") {
-        return handleSyncRestrictedAccount(errorCode);
+        return handleSyncRestrictedAccount(errorCode, options);
       }
       if (handleSyncKnownBusinessError(errorCode, error)) {
         return errorCode;
@@ -1747,9 +2009,53 @@
       const currentRequest = (async () => {
         try {
           const me = await requestJson("me");
+          const previousUser = state.syncUser.value;
+          state.syncUserPaymentClaims.value = me && Array.isArray(me.payment_claims) ? me.payment_claims : [];
           state.syncUser.value = me;
           state.syncAuthenticated.value = true;
           writeSessionHint(true);
+          if (me && me.email_verification_required) {
+            setSyncRestrictionState("email_verification_required", { messageOnly: true });
+          } else {
+            clearSyncRestrictionState("email_verification_required");
+          }
+          maybeNotifyPlanStatus(me, previousUser);
+          if (me && me.email_verification_required) {
+            const overdueSignature = `${me.email || 'unknown'}:overdue:${me.email_verification_deadline || 'none'}`;
+            if (readEmailToastSignature() !== overdueSignature) {
+              writeEmailToastSignature(overdueSignature);
+              pushSyncToast(
+                "warning",
+                "sync.email_verification_overdue_title",
+                "sync.email_verification_overdue_notice",
+                "邮箱验证已超期",
+                "邮箱验证已超期，部分同步功能已受限，请先完成邮箱验证。",
+                `sync-email-overdue:${overdueSignature}`,
+                {
+                  durationMs: 12000,
+                  onActivate: typeof state.openSyncModal === "function" ? () => state.openSyncModal() : null,
+                }
+              );
+            }
+          } else if (me && me.email_verified === false) {
+            const emailToastSignature = `${me.email || 'unknown'}:${me.email_verification_deadline || 'none'}`;
+            if (readEmailToastSignature() !== emailToastSignature) {
+              writeEmailToastSignature(emailToastSignature);
+            pushSyncToast(
+              "warning",
+              "sync.email_unverified_title",
+              "sync.email_unverified_notice",
+              "邮箱尚未验证",
+              `请在 ${me.email_verification_deadline || '-'} 前完成邮箱验证，否则部分权益将受限。`,
+              `sync-email-unverified:${emailToastSignature}`,
+              {
+                durationMs: 12000,
+                summaryParams: { time: me.email_verification_deadline || '-' },
+                onActivate: typeof state.openSyncModal === "function" ? () => state.openSyncModal() : null,
+              }
+            );
+            }
+          }
           if (skipSyncFetch) return;
           if (options && options.forceFullSnapshot) {
             const remote = await fetchRemoteSnapshot();
@@ -1848,6 +2154,8 @@
           silent: Boolean(options && options.silentErrors),
           silentBlocked: Boolean(options && options.silentBlocked),
           toastLogin: readSessionHint(),
+          toastOnRestricted: true,
+          source: options && options.force ? "passive-force" : "passive",
         });
         return result === "unauthorized" || result === "account_disabled" ? "signed_out" : result;
       }
@@ -1946,7 +2254,9 @@
         const serverChanged = Number(remote.version || 0) !== lastServerVersion;
 
         if (!localChanged && !serverChanged) {
-          setSyncNotice(createSyncTextEntry("sync.already_up_to_date", "Already up to date."), "info");
+          const notice = createSyncTextEntry("sync.already_up_to_date", "Already up to date.");
+          setSyncNotice(notice, "info");
+          pushSyncToast("info", "sync.manual_sync_title", "sync.already_up_to_date", "手动同步", resolveSyncEntry(notice).text, "sync-manual-up-to-date");
           return;
         }
 
@@ -2000,6 +2310,8 @@
         } else {
           handleSyncRequestFailure(error, "sync.error_sync_failed", "Sync failed due to a server error.", {
             toastOnError: true,
+            toastOnRestricted: true,
+            source: "manual",
           });
         }
       } finally {
@@ -2164,15 +2476,22 @@
       }
       state.syncBusy.value = true;
       try {
-        await requestJson(state.syncAuthMode.value === "register" ? "register" : "login", {
+        const isRegister = state.syncAuthMode.value === "register";
+        const authPayload = isRegister
+          ? {
+              username,
+              email,
+              password,
+              "cf-turnstile-response": String(state.syncTurnstileToken.value || ""),
+            }
+          : {
+              account: loginAccount,
+              password,
+              "cf-turnstile-response": String(state.syncTurnstileToken.value || ""),
+            };
+        await requestJson(isRegister ? "register" : "login", {
           method: "POST",
-          body: JSON.stringify({
-            account: loginAccount,
-            username,
-            email,
-            password,
-            "cf-turnstile-response": String(state.syncTurnstileToken.value || ""),
-          }),
+          body: JSON.stringify(authPayload),
         });
         writeSessionHint(true);
         state.syncAccountInput.value = "";
@@ -2183,7 +2502,9 @@
         await refreshSyncSession(true);
         setSyncNotice(createSyncTextEntry(
           state.syncAuthMode.value === "register" ? "sync.register_success" : "sync.login_success",
-          "登录成功。"
+          state.syncAuthMode.value === "register"
+            ? "注册成功，已自动登录。验证码邮件已发送，请检查收件箱或垃圾箱。"
+            : "登录成功。"
         ), "info");
         await handleInitialRemoteStateAfterAuth();
       } catch (error) {
@@ -2195,19 +2516,7 @@
           const tone = syncTurnstileToneByErrorCode(errorCode);
           setSyncTurnstileMessage(turnstileEntry.key, turnstileEntry.fallback, tone || "warning");
         }
-        const httpStatus = error?.status ? `HTTP ${error.status}` : 'HTTP N/A';
-        const errorDetails = buildSyncErrorDetails(error, {
-          endpoint: state.syncAuthMode.value === "register" ? "register" : "login",
-          method: 'POST',
-        });
-        const message = normalizeSyncMessage(
-          error && error.message ? error.message : '',
-          "sync.error_sync_failed",
-          "同步失败，请稍后重试。",
-          error && error.payload ? error.payload : null
-        );
-        const messageWithStatus = `${httpStatus}: ${message}`;
-        setSyncError(messageWithStatus, errorDetails);
+        handleSyncRequestFailure(error, "sync.error_sync_failed", "同步失败，请稍后重试。");
       } finally {
         if (isTurnstileEnabled() && !state.syncAuthenticated.value) {
           resetSyncTurnstileWidget({ skipRemount: false });
@@ -2216,12 +2525,28 @@
       }
     };
 
+    watch(state.syncAuthMode, (mode, previousMode) => {
+      const nextMode = String(mode || "login");
+      const previous = String(previousMode || "");
+      if (!previous || previous === nextMode) return;
+      state.syncPasswordInput.value = "";
+      state.syncPasswordConfirmInput.value = "";
+      if (nextMode === "login") {
+        state.syncUsernameInput.value = "";
+        state.syncEmailInput.value = "";
+      } else {
+        state.syncAccountInput.value = "";
+      }
+      clearSyncError();
+      clearSyncNotice();
+    });
+
     const submitSyncPasswordChange = async () => {
       if (!ensureSyncFrontendAllowed()) return;
       const authenticated = Boolean(state.syncAuthenticated.value);
       const useResetCode =
         !authenticated || String(state.syncPasswordChangeMode.value || "current") === "reset_code";
-      const account = String(state.syncPasswordResetRequestAccountInput.value || state.syncAccountInput.value || state.syncUsernameInput.value || "").trim();
+      const account = String(state.syncPasswordResetRequestAccountInput.value || "").trim();
       const currentPassword = String(state.syncCurrentPasswordInput.value || "");
       const resetCode = String(state.syncResetCodeInput.value || "").trim();
       const newPassword = String(state.syncNewPasswordInput.value || "");
@@ -2356,22 +2681,8 @@
         );
         closeSyncPasswordModal();
       } catch (error) {
-        const httpStatus = error?.status ? `HTTP ${error.status}` : 'HTTP N/A';
-        const errorDetails = sanitizeErrorDetails({
-          status: error?.status,
-          raw: error?.message,
-          payload: error?.payload,
-          message: error?.message
-        });
-        const message = normalizeSyncMessage(
-          '',
-          "sync.error_sync_failed",
-          "同步失败，请稍后重试。",
-          error && error.payload ? error.payload : null
-        );
-        const messageWithStatus = `${httpStatus}: ${message}`;
-        state.syncPasswordChangeError.value = coerceSyncText(messageWithStatus, "");
-        setSyncError(messageWithStatus, errorDetails);
+        handleSyncRequestFailure(error, "sync.error_sync_failed", "同步失败，请稍后重试。");
+        state.syncPasswordChangeError.value = state.syncError.value;
       } finally {
         state.syncBusy.value = false;
       }
@@ -2472,6 +2783,7 @@
     state.syncConflictDetected = ref(false);
     state.syncConflictCurrent = ref(null);
     state.syncConflictConfirmMode = ref("");
+    state.syncRestrictionCode = ref("");
     state.syncSuccessToastEnabled = ref(storedPrefs.successToastEnabled !== false);
     state.syncAutoSyncEnabled = ref(storedPrefs.autoSyncEnabled !== false);
     state.syncApiBaseInput = ref(String(storedDevSettings.apiBase || ""));
@@ -2493,6 +2805,9 @@
       const lastHash = String(state.syncLastLocalHash.value || "");
       if (!state.syncAuthenticated.value) {
         return getSyncText("sync.auto_sync_signed_out", "登录后开启自动同步");
+      }
+      if (state.syncRestrictionCode.value === "email_verification_required") {
+        return getSyncText("sync.auto_sync_blocked_email_verification", "邮箱验证已超期，部分同步功能已受限，请先完成邮箱验证。");
       }
       if (!(state.syncUser.value && state.syncUser.value.auto_sync_allowed)) {
         return getSyncText("sync.auto_sync_member_only", "当前档位不支持自动同步");
@@ -2640,10 +2955,9 @@
       () => Boolean(state.syncUser.value && state.syncUser.value.auto_sync_allowed),
       (allowed) => {
         if (!allowed) {
-          state.syncAutoSyncEnabled.value = false;
           clearAutoSyncTimer();
-          persistPrefs();
         }
+        lastAutoSyncEntitlement = allowed;
       },
       { immediate: true }
     );
@@ -2653,18 +2967,19 @@
         Boolean(state.syncAuthenticated.value),
         Boolean(state.syncBusy.value),
         Boolean(state.syncConflictDetected.value),
+        String(state.syncRestrictionCode.value || ""),
         String(state.syncCurrentComparableHash.value || ""),
         String(state.syncLastLocalHash.value || ""),
       ],
       (current, previous) => {
-        const [authenticated, busy, conflict, currentHash, lastHash] = current;
+        const [authenticated, busy, conflict, restrictionCode, currentHash, lastHash] = current;
         const autoSyncAllowed = Boolean(state.syncUser.value && state.syncUser.value.auto_sync_allowed);
         const autoSyncEnabled = Boolean(state.syncAutoSyncEnabled.value);
-        if (!authenticated || !autoSyncAllowed || !autoSyncEnabled || busy || conflict || !currentHash || currentHash === lastHash) {
+        if (!authenticated || !autoSyncAllowed || !autoSyncEnabled || busy || conflict || restrictionCode || !currentHash || currentHash === lastHash) {
           clearAutoSyncTimer();
           return;
         }
-        const previousHash = Array.isArray(previous) ? previous[3] : "";
+        const previousHash = Array.isArray(previous) ? previous[4] : "";
         if (currentHash !== previousHash || !autoSyncTimer) {
           scheduleAutoSync();
         }
@@ -2725,11 +3040,17 @@
     });
 
     watch(
-      () => [Boolean(state.syncUser && state.syncUser.value && state.syncUser.value.ad_free)],
-      ([adFree]) => {
+      () => [
+        Boolean(state.appReady && state.appReady.value),
+        Boolean(state.syncAuthenticated.value),
+        state.syncUser && state.syncUser.value ? state.syncUser.value.ad_free : null,
+      ],
+      ([appReady, authenticated, adFree]) => {
         clearAdblockDetectionTimer();
         state.showAdblockNotice.value = false;
         state.aboutAdLoaded.value = false;
+        if (!appReady) return;
+        if (authenticated && adFree === null) return;
         if (adFree) return;
         const runCheck = () => {
           if (typeof window !== 'undefined' && typeof window.requestAnimationFrame === 'function') {
