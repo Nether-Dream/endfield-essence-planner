@@ -38,6 +38,7 @@
     const syncTurnstileAction = "sync_auth";
     const syncTurnstileScriptSrc = "https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit";
     const adblockNoticeSessionKey = "planner-adblock-notice-shown:v1";
+    const maxAutoSyncAttemptsPerHash = 2;
     let autoSyncTimer = null;
     let autoSyncCountdownTimer = null;
     let syncSessionRequest = null;
@@ -57,6 +58,8 @@
     let syncVerificationSubmitCooldownTimer = null;
     let syncEmailChangeCooldownTimer = null;
     let syncResetCodeRequestCooldownTimer = null;
+    let lastAutoSyncAttemptHash = "";
+    let lastAutoSyncAttemptCount = 0;
     const overlayClosePointerState = Object.create(null);
     const overlayClosePointerMoveThreshold = 8;
 
@@ -417,19 +420,31 @@
     const buildComparableHash = (raw, options) =>
       hashText(stableSerialize(normalizeDurableComparableData(raw, options)));
 
-    const buildLocalComparable = () =>
-      normalizeComparableData({
+    const getCurrentPlanTier = () =>
+      String(state.syncUser && state.syncUser.value && state.syncUser.value.plan_tier || "free");
+
+    const isPremiumPlanTier = (planTier) => String(planTier || "free") === "premium";
+
+    const buildLocalComparable = (options) => {
+      const planTier = options && options.planTier ? String(options.planTier) : getCurrentPlanTier();
+      const comparable = normalizeComparableData({
         marks: cloneJson(getRefValue(state.weaponMarks, {}), {}),
         customWeapons: cloneJson(getRefValue(state.customWeapons, []), []),
         workspace: normalizeWorkspace({}, { useCurrentFallback: true }),
       }, { useCurrentFallback: true });
+      if (!isPremiumPlanTier(planTier)) {
+        delete comparable.customWeapons;
+        comparable.excludedFields = ["customWeapons"];
+      }
+      return comparable;
+    };
 
     const buildLocalPayload = () => {
       const now = new Date().toISOString();
       const versionInfo = readVersionInfo();
-      const comparable = buildLocalComparable();
-      const planTier = String(state.syncUser && state.syncUser.value && state.syncUser.value.plan_tier || "free");
-      const isPremium = planTier === "premium";
+      const planTier = getCurrentPlanTier();
+      const comparable = buildLocalComparable({ planTier });
+      const isPremium = isPremiumPlanTier(planTier);
       const planner = {
         marks: {
           updatedAt: now,
@@ -467,6 +482,37 @@
       }
     };
 
+    const canAttemptAutoSyncForHash = (hash) => {
+      const currentHash = String(hash || "");
+      if (!currentHash) return false;
+      if (lastAutoSyncAttemptHash !== currentHash) return true;
+      return lastAutoSyncAttemptCount < maxAutoSyncAttemptsPerHash;
+    };
+
+    const noteAutoSyncAttemptForHash = (hash) => {
+      const currentHash = String(hash || "");
+      if (!currentHash) return;
+      if (lastAutoSyncAttemptHash !== currentHash) {
+        lastAutoSyncAttemptHash = currentHash;
+        lastAutoSyncAttemptCount = 0;
+      }
+      lastAutoSyncAttemptCount += 1;
+    };
+
+    const clearAutoSyncAttemptState = () => {
+      lastAutoSyncAttemptHash = "";
+      lastAutoSyncAttemptCount = 0;
+    };
+
+    const isAutoSyncRetryExhaustedForHash = (hash) => {
+      const currentHash = String(hash || "");
+      return Boolean(
+        currentHash &&
+        lastAutoSyncAttemptHash === currentHash &&
+        lastAutoSyncAttemptCount >= maxAutoSyncAttemptsPerHash
+      );
+    };
+
     const ensureAutoSyncCountdownTimer = () => {
       clearAutoSyncCountdownTimer();
       if (!state.syncAutoSyncDueAt || !("value" in state.syncAutoSyncDueAt) || !state.syncAutoSyncDueAt.value) return;
@@ -499,7 +545,7 @@
       if (!state.syncAuthenticated.value || state.syncBusy.value || state.syncConflictDetected.value) return;
       const currentHash = String(state.syncCurrentComparableHash.value || "");
       const lastHash = String(state.syncLastLocalHash.value || "");
-      if (!currentHash || currentHash === lastHash) return;
+      if (!currentHash || currentHash === lastHash || !canAttemptAutoSyncForHash(currentHash)) return;
       state.syncAutoSyncDueAt.value = Date.now() + autoSyncDelayMs;
       ensureAutoSyncCountdownTimer();
       autoSyncTimer = setTimeout(() => {
@@ -509,7 +555,8 @@
         if (!state.syncAuthenticated.value || state.syncBusy.value || state.syncConflictDetected.value) return;
         const liveHash = String(state.syncCurrentComparableHash.value || "");
         const syncedHash = String(state.syncLastLocalHash.value || "");
-        if (!liveHash || liveHash === syncedHash) return;
+        if (!liveHash || liveHash === syncedHash || !canAttemptAutoSyncForHash(liveHash)) return;
+        noteAutoSyncAttemptForHash(liveHash);
         performManualSync({ source: "auto" });
       }, autoSyncDelayMs);
     };
@@ -1303,57 +1350,78 @@
       return remaining > 0 ? remaining : 0;
     };
 
-    const normalizeSyncMessage = (message, fallbackKey, fallbackText, payload) => {
-      const errorCode = extractSyncErrorCode((payload && payload.error) || message);
+    const appendSyncSupportHint = (text) => {
       const supportHint = getSyncText(
         "sync.support_hint",
         "If the issue keeps happening, contact the developer via GitHub or the notice-group entry."
       );
-      const appendSupportHint = (text) => {
-        const base = coerceSyncText(text, "");
-        if (!base || !supportHint || base.indexOf(supportHint) >= 0) return base;
-        return `${base} ${supportHint}`.trim();
-      };
-      const maybeAppendSupportHint = (text) => {
-        if (
-          fallbackKey === "sync.error_sync_failed" ||
-          errorCode === "sync_failed" ||
-          errorCode === "turnstile_unavailable"
-        ) {
-          return appendSupportHint(text);
-        }
-        return text;
-      };
-      const appendRetryAfter = (text) => {
-        if (errorCode !== "rate_limit_exceeded" && errorCode !== "rate_limited" && errorCode !== "temporarily_blocked") return text;
-        const retryAfterSec = Number(payload && payload.retry_after);
-        if (!Number.isFinite(retryAfterSec) || retryAfterSec <= 0) return text;
-        const base = coerceSyncText(text, "");
-        if (retryAfterSec >= 60) {
-          const mins = Math.ceil(retryAfterSec / 60);
-          const hint = getSyncText("sync.error_retry_after_minutes", "{min}分钟后可重试", { min: mins });
-          return `${base}（${hint}）`;
-        }
-        const secs = Math.ceil(retryAfterSec);
-        const hint = getSyncText("sync.error_retry_after_seconds", "{sec}秒后可重试", { sec: secs });
+      const base = coerceSyncText(text, "");
+      if (!base || !supportHint || base.indexOf(supportHint) >= 0) return base;
+      return `${base} ${supportHint}`.trim();
+    };
+
+    const maybeAppendSyncSupportHint = (text, errorCode, fallbackKey) => {
+      if (
+        fallbackKey === "sync.error_sync_failed" ||
+        errorCode === "sync_failed" ||
+        errorCode === "turnstile_unavailable"
+      ) {
+        return appendSyncSupportHint(text);
+      }
+      return text;
+    };
+
+    const appendSyncRetryAfter = (text, errorCode, payload) => {
+      if (errorCode !== "rate_limit_exceeded" && errorCode !== "rate_limited" && errorCode !== "temporarily_blocked") return text;
+      const retryAfterSec = Number(payload && payload.retry_after);
+      if (!Number.isFinite(retryAfterSec) || retryAfterSec <= 0) return text;
+      const base = coerceSyncText(text, "");
+      if (retryAfterSec >= 60) {
+        const mins = Math.ceil(retryAfterSec / 60);
+        const hint = getSyncText("sync.error_retry_after_minutes", "{min}分钟后可重试", { min: mins });
         return `${base}（${hint}）`;
-      };
+      }
+      const secs = Math.ceil(retryAfterSec);
+      const hint = getSyncText("sync.error_retry_after_seconds", "{sec}秒后可重试", { sec: secs });
+      return `${base}（${hint}）`;
+    };
+
+    const normalizeSyncMessage = (message, fallbackKey, fallbackText, payload) => {
+      const errorCode = extractSyncErrorCode((payload && payload.error) || message);
       const translatedByCode = translateSyncError(errorCode);
       if (translatedByCode && translatedByCode !== errorCode) {
-        return appendRetryAfter(maybeAppendSupportHint(translatedByCode));
+        return appendSyncRetryAfter(
+          maybeAppendSyncSupportHint(translatedByCode, errorCode, fallbackKey),
+          errorCode,
+          payload
+        );
       }
       const backendMessage = getPreferredBackendMessage(payload);
       const raw = coerceSyncText(backendMessage || message, "");
       const translated = translateSyncError(raw);
-      if (translated && translated !== raw) return maybeAppendSupportHint(translated);
+      if (translated && translated !== raw) {
+        return appendSyncRetryAfter(
+          maybeAppendSyncSupportHint(translated, errorCode, fallbackKey),
+          errorCode,
+          payload
+        );
+      }
       if (!isSyncFrontendAllowed()) {
         return resolveSyncEntry(getSyncFrontendBlockedEntry()).text;
       }
       if (!raw || /^TypeError\b/i.test(raw) || /Failed to fetch|Load failed|NetworkError/i.test(raw)) {
         const networkError = raw || '网络连接失败';
-        return maybeAppendSupportHint(`请求未到达服务器，可能是 CORS、网络异常或服务不可达。浏览器信息：${networkError}`);
+        return maybeAppendSyncSupportHint(
+          `请求未到达服务器，可能是 CORS、网络异常或服务不可达。浏览器信息：${networkError}`,
+          errorCode,
+          fallbackKey
+        );
       }
-      return maybeAppendSupportHint(getSyncText("sync.error_unknown", "未知错误"));
+      return appendSyncRetryAfter(
+        maybeAppendSyncSupportHint(raw, errorCode, fallbackKey),
+        errorCode,
+        payload
+      );
     };
 
     const syncTurnstileToneByErrorCode = (errorCode) => {
@@ -2287,7 +2355,7 @@
       if (!me || typeof me !== "object") return;
       const planTier = String(me.plan_tier || "free");
       const planExpiresAtRaw = String(me.plan_expires_at || me.premium_until || me.premium_trial_until || "");
-      const planExpiresAt = formatClaimTime(planExpiresAtRaw);
+      const planExpiresAt = planExpiresAtRaw ? formatClaimTime(planExpiresAtRaw) : "";
       const expiringSoon = Boolean(me.plan_expiring_soon);
       const expired = Boolean(me.plan_expired);
       const autoSyncAllowed = Boolean(me.auto_sync_allowed);
@@ -2334,6 +2402,7 @@
       }
 
       if (autoSyncAllowed && !previousAutoSyncAllowed && !state.syncAutoSyncEnabled.value) {
+        clearSyncRestrictionState("premium_required");
         const restoredSignature = `auto-sync-restored:${planTier}:${planExpiresAtRaw || "none"}`;
         if (readPlanToastSignature() !== restoredSignature) {
           writePlanToastSignature(restoredSignature);
@@ -2419,6 +2488,14 @@
           key: 'sync.error_rate_limited',
           fallback: '请求过于频繁，请稍后再试。',
         },
+        rate_limit_exceeded: {
+          key: 'sync.error_rate_limited',
+          fallback: '请求过于频繁，请稍后再试。',
+        },
+        temporarily_blocked: {
+          key: 'sync.error_rate_limited',
+          fallback: '请求过于频繁，请稍后再试。',
+        },
         weak_password: {
           key: 'sync.error_weak_password',
           fallback: '密码至少需要 6 位。',
@@ -2494,8 +2571,14 @@
       };
       const matched = knownMap[errorCode];
       if (!matched) return false;
+      const payload = error && error.payload ? error.payload : null;
       const errorDetails = buildSyncErrorDetails(error);
-      setSyncError(createSyncTextEntry(matched.key, matched.fallback), errorDetails);
+      const message = appendSyncRetryAfter(
+        resolveSyncEntry(createSyncTextEntry(matched.key, matched.fallback)).text || matched.fallback,
+        errorCode,
+        payload
+      );
+      setSyncError(message, errorDetails);
       return true;
     };
 
@@ -2669,7 +2752,10 @@
     }
 
     function isAutoSyncRestricted() {
-      return Boolean(state.syncRestrictionCode.value === "premium_required" || state.syncRestrictionCode.value === "email_verification_required");
+      return Boolean(
+        state.syncRestrictionCode.value === "premium_required" ||
+        state.syncRestrictionCode.value === "email_verification_required"
+      );
     }
 
     const runPassiveRemoteCheck = async (options) => {
@@ -2726,6 +2812,7 @@
     };
 
     const commitSyncSuccess = (noticeKey, summaryKey, fallbackTitle, fallbackSummary) => {
+      clearAutoSyncAttemptState();
       setSyncNotice(createSyncTextEntry(summaryKey, fallbackSummary));
       const forceToast = summaryKey === "sync.pull_success_summary" || summaryKey === "sync.remote_pulled_notice";
       if (state.syncSuccessToastEnabled.value || forceToast) {
@@ -3387,7 +3474,9 @@
     state.syncLastLocalHash = ref(String(storedMeta.localHash || ""));
     state.syncAutoSyncDueAt = ref(0);
     state.syncAutoSyncClock = ref(Date.now());
-    state.syncCurrentComparableHash = computed(() => buildComparableHash(buildLocalComparable()));
+    state.syncCurrentComparableHash = computed(() =>
+      buildComparableHash(buildLocalComparable({ planTier: getCurrentPlanTier() }))
+    );
     state.syncLastSyncedDisplay = computed(() => formatSyncDateTime(state.syncLastSyncedAt.value));
     state.syncRemoteUpdatedDisplay = computed(() => formatSyncDateTime(state.syncRemoteUpdatedAt.value));
     state.syncAutoSyncText = computed(() => {
@@ -3412,6 +3501,9 @@
       }
       if (state.syncBusy.value) {
         return getSyncText("sync.auto_sync_syncing", "正在同步");
+      }
+      if (currentHash && currentHash !== lastHash && isAutoSyncRetryExhaustedForHash(currentHash)) {
+        return String(state.syncError.value || "自动同步已暂停，请处理错误后手动重试。");
       }
       if (currentHash && currentHash !== lastHash) {
         return getSyncText(
