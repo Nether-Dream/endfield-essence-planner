@@ -27,9 +27,18 @@
     state.showAdblockNotice = ref(false);
     state.showFaq = ref(false);
     state.showSyncModal = ref(false);
+    state.showCnSyncUnavailableModal = ref(false);
     state.showSecondaryMenu = ref(false);
     state.showSyncRightsDetails = ref(false);
     state.syncUserPaymentClaims = ref([]);
+    state.syncRegionAccessMode = ref(
+      typeof window !== "undefined" &&
+        window.location &&
+        /^(localhost|127\.0\.0\.1)$/i.test(String(window.location.hostname || ""))
+        ? "available"
+        : "checking"
+    );
+    state.syncRegionCode = ref("");
 
     state.contentLoading = ref(false);
     state.contentLoaded = ref(Boolean(window.CONTENT));

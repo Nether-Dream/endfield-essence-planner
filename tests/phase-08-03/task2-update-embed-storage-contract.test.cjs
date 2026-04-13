@@ -178,7 +178,7 @@ const createStorageHarness = () => {
   };
 };
 
-const runEmbedScenario = async ({ fetchImpl, host = "mirror.example.com" }) => {
+const runEmbedScenario = async ({ fetchImpl, host = "mirror.example.com", embedConfig }) => {
   const mounted = [];
   const fetchCalls = [];
   const context = {
@@ -218,11 +218,14 @@ const runEmbedScenario = async ({ fetchImpl, host = "mirror.example.com" }) => {
           officialHosts: ["end.canmoe.com"],
           allowedHosts: ["end.canmoe.com"],
           icpHosts: ["end.canmoe.com"],
+          ...(embedConfig || {}),
         },
       },
     },
     t: (key) => key,
     ensureContentLoaded: async () => {},
+    syncRegionAccessMode: createRef("checking"),
+    syncRegionCode: createRef(""),
   };
   const lifecycle = {
     ref: createRef,
@@ -478,6 +481,66 @@ const runStorageRegressionLink = async () => {
     fetchFailure.state.isOfficialDeployment.value,
     false,
     "[embed] fetch failure should degrade to non-official mode"
+  );
+
+  const regionDetectionFallback = await runEmbedScenario({
+    host: "end.canmoe.com",
+    fetchImpl: async (url) => {
+      if (String(url).includes("/cdn-cgi/trace")) {
+        return {
+          ok: true,
+          text: async () => "loc=CN",
+        };
+      }
+      return {
+        status: 200,
+        headers: { get: () => "1" },
+      };
+    },
+  });
+  assert.equal(
+    regionDetectionFallback.state.syncRegionAccessMode.value,
+    "cn-blocked",
+    "[embed] when syncRegionDetectionHosts is not configured, officialHosts should remain the fallback for region detection"
+  );
+  assert.equal(
+    regionDetectionFallback.state.syncRegionCode.value,
+    "CN",
+    "[embed] enabled region detection should persist the detected country code"
+  );
+  assert.equal(
+    regionDetectionFallback.fetchCalls.some((call) => String(call.url).includes("/cdn-cgi/trace")),
+    true,
+    "[embed] enabled region detection should request /cdn-cgi/trace"
+  );
+
+  const regionDetectionOptOut = await runEmbedScenario({
+    host: "alt.canmoe.com",
+    embedConfig: {
+      officialHosts: ["end.canmoe.com", "alt.canmoe.com"],
+      allowedHosts: ["end.canmoe.com", "alt.canmoe.com"],
+      icpHosts: ["end.canmoe.com"],
+      syncRegionDetectionHosts: ["end.canmoe.com"],
+    },
+    fetchImpl: async () => ({
+      status: 200,
+      headers: { get: () => "1" },
+    }),
+  });
+  assert.equal(
+    regionDetectionOptOut.state.syncRegionAccessMode.value,
+    "available",
+    "[embed] official hosts excluded from syncRegionDetectionHosts should keep sync entry available without region blocking"
+  );
+  assert.equal(
+    regionDetectionOptOut.state.syncRegionCode.value,
+    "",
+    "[embed] skipped region detection should leave the sync region code empty"
+  );
+  assert.equal(
+    regionDetectionOptOut.fetchCalls.some((call) => String(call.url).includes("/cdn-cgi/trace")),
+    false,
+    "[embed] official hosts excluded from syncRegionDetectionHosts should skip /cdn-cgi/trace entirely"
   );
 
   const validUpdate = await runUpdateScenario({

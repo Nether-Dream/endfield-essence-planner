@@ -894,9 +894,9 @@
                     <div class="secondary-label">{{ t("sync.payment_claim_history_title") }}</div>
                     <div class="sync-status-list">
                       <div v-for="claim in syncUserPaymentClaims" :key="claim.id" class="sync-summary-card sync-claim-history-item">
-                        <div class="secondary-label">#{{ claim.id }} · {{ t("sync.payment." + claim.channel, claim.channel) }} · {{ claim.external_reference }}</div>
+                        <div class="secondary-label">#{{ claim.id }} · {{ formatSyncPaymentChannelLabel(claim.channel) }} · {{ claim.external_reference }}</div>
                         <div v-if="claim.merchant_order_no" class="secondary-hint">{{ t("sync.payment_merchant_order_label") }}：{{ claim.merchant_order_no }}</div>
-                        <div class="secondary-hint">{{ t("sync.payment_claim_status_label") }}：{{ t("sync.payment.status." + claim.status, claim.status) }}</div>
+                        <div class="secondary-hint">{{ t("sync.payment_claim_status_label") }}：{{ formatSyncPaymentStatusLabel(claim.status) }}</div>
                         <div class="secondary-hint">{{ t("sync.payment_claim_submitted_at_label") }}：{{ formatClaimTime(claim.submitted_at) }}</div>
                         <div v-if="claim.expires_at" class="secondary-hint">{{ t("sync.payment_claim_expires_at_label") }}：{{ formatClaimTime(claim.expires_at) }}</div>
                       </div>
@@ -1227,6 +1227,26 @@
               <button class="ghost-button" :disabled="syncBusy || syncFrontendBlocked" @click="closeSyncEmailModal">
                 {{ t("plan_config.close") }}
               </button>
+            </div>
+          </div>
+        </div>
+      </transition>
+
+      <transition name="fade-scale">
+        <div
+          v-if="showCnSyncUnavailableModal"
+          class="about-overlay notice-overlay"
+          @pointerdown.self="beginOverlayPointerClose('cn-sync-unavailable-modal', $event)"
+          @pointerup.self="finishOverlayPointerClose('cn-sync-unavailable-modal', closeCnSyncUnavailableModal, $event)"
+          @pointercancel.self="cancelOverlayPointerClose('cn-sync-unavailable-modal')"
+        >
+          <div class="about-card notice-card">
+            <h3>{{ t("sync.cn_region_unavailable_title") }}</h3>
+            <div class="notice-body">
+              <p>{{ t("sync.cn_region_unavailable_summary") }}</p>
+            </div>
+            <div class="about-actions">
+              <button class="ghost-button" @click="closeCnSyncUnavailableModal">{{ t("plan_config.close") }}</button>
             </div>
           </div>
         </div>

@@ -2,19 +2,19 @@ window.CONTENT = {
   gameCompat: {
     supportedVersion: "1.1",
     nextVersion: "1.2",
-    nextVersionAt: "2026-04-16T00:00:00Z",
+    nextVersionAt: "2026-04-17T00:00:00Z",
   },
   announcement: {
-    version: "1.1.6",
+    version: "1.1.7",
     title: "nav.announcement",
-    date: "2026-04-01",
+    date: "2026-04-13",
     //用完记得改回去
-    forceModal: true,
+    forceModal: false,
     qqGroup: "1045523485",
     qqNote: "反馈与建议交流",
     items: [
-      "邮箱现在应当恢复正常,但是当前发信量还是有些大的...如果你遇到了掉登录问题,可通过任意渠道向我反馈(例如具体时间,在什么操作后,网页是否有任何提示)",
-      "所有已登录/新注册用户自动发放7天体验期;如果你在 2026/02/02-2026/03/31 曾赞赏过任意金额,根据登录页下方的更改权益指引直接使用您对应的支付凭证即可(如果你是通过微信赞赏码渠道,请通过任意渠道向我发送赞赏码支付截图和您的用户名并使用您视角下的转账单号进行申请,因为双方视角下单号不一致,我无法确认您的订单信息,可以通过GitHub/QQ群/页脚的邮箱等方式向我取得联系,如果超过24小时仍然未审核,请通过任意方式向我取得联系)",
+      "因为一些特殊原因,在线同步/登录功能不再向中国大陆用户提供服务",
+      "对网站有新功能建议?遇到使用问题需要反馈?欢迎填写问卷,感谢您抽出宝贵时间作答 https://wj.qq.com/s2/26315367/7916/",
       "如果你对本站使用的背景感兴趣,[点此通过网盘下载随机图中的背景](https://pan.quark.cn/s/27540d6f3706),感谢你的喜欢!",
     ],
   },
@@ -272,7 +272,8 @@ window.CONTENT = {
     ],
   },
   embed: {
-    officialHosts: ["end.canmoe.com"],
+    officialHosts: ["end.canmoe.com", "end.07070721.xyz"],
+    syncRegionDetectionHosts: ["end.canmoe.com"],
     allowedHosts: ["elysium-stack.cn"],
     icpHosts: ["end.canmoe.com"],
   },

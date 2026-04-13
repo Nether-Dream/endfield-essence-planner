@@ -46,16 +46,26 @@
       }
       return state.content || window.CONTENT || {};
     };
-    const readHostPatterns = (key) => {
+    const readHostPatterns = (key, options) => {
       const content = readContent();
-      const hosts = Array.isArray(content.embed?.[key]) ? content.embed[key] : [];
+      const embedConfig = content && content.embed && typeof content.embed === "object" ? content.embed : {};
+      const hasExplicitKey = Object.prototype.hasOwnProperty.call(embedConfig, key);
+      const fallbackKey = options && options.fallbackKey ? String(options.fallbackKey) : "";
+      const hosts = Array.isArray(embedConfig[key])
+        ? embedConfig[key]
+        : !hasExplicitKey && fallbackKey && Array.isArray(embedConfig[fallbackKey])
+          ? embedConfig[fallbackKey]
+          : [];
       return new Set(hosts.map(toHostPattern).filter(Boolean));
     };
     const readEmbedAllowedHostPatterns = () => readHostPatterns("allowedHosts");
     const readOfficialHostPatterns = () => readHostPatterns("officialHosts");
     const readIcpHostPatterns = () => readHostPatterns("icpHosts");
+    const readSyncRegionDetectionHostPatterns = () =>
+      readHostPatterns("syncRegionDetectionHosts", { fallbackKey: "officialHosts" });
     const isHostMatchedByPatterns = (host, patterns) =>
       host && patterns.size ? Array.from(patterns).some((pattern) => hostMatchesPattern(host, pattern)) : false;
+    const localhostPattern = /^(localhost|127\.0\.0\.1)$/i;
 
     const currentHost = ref(normalizeHost(window.location.hostname));
     const isFileProtocol = window.location.protocol === "file:";
@@ -116,6 +126,14 @@
       const host = normalizeHost(embedHost.value);
       isEmbedTrusted.value = isHostMatchedByPatterns(host, embedAllowedHostPatterns);
     };
+
+    const isLocalhostFrontend = () =>
+      typeof window !== "undefined" &&
+      window.location &&
+      localhostPattern.test(String(window.location.hostname || ""));
+
+    const shouldDetectSyncRegionForCurrentHost = () =>
+      isHostMatchedByPatterns(normalizeHost(currentHost.value), readSyncRegionDetectionHostPatterns());
 
     if (isEmbedded.value) {
       let embedOrigin = "";
@@ -208,6 +226,76 @@
       }
     };
 
+    const normalizeCountryCode = (value) => String(value || "").trim().toUpperCase();
+
+    const parseCloudflareTraceCountryCode = (raw) => {
+      const text = String(raw || "").trim();
+      if (!text) return "";
+      if (text.startsWith("{") || text.startsWith("[")) {
+        try {
+          const parsed = JSON.parse(text);
+          if (parsed && typeof parsed === "object") {
+            return normalizeCountryCode(parsed.ip_country_id || parsed.loc || "");
+          }
+        } catch (error) {
+          return "";
+        }
+        return "";
+      }
+      const lines = text.split(/\r?\n/);
+      for (let index = 0; index < lines.length; index += 1) {
+        const line = lines[index];
+        const separatorIndex = line.indexOf("=");
+        if (separatorIndex <= 0) continue;
+        const key = String(line.slice(0, separatorIndex) || "").trim();
+        const value = String(line.slice(separatorIndex + 1) || "").trim();
+        if (key === "loc" || key === "ip_country_id") {
+          return normalizeCountryCode(value);
+        }
+      }
+      return "";
+    };
+
+    const detectCloudflareCountryCode = async () => {
+      if (typeof window === "undefined" || typeof fetch !== "function") return "";
+      const traceUrl =
+        window.location && window.location.origin
+          ? `${window.location.origin}/cdn-cgi/trace`
+          : "/cdn-cgi/trace";
+      try {
+        const response = await fetch(traceUrl, {
+          method: "GET",
+          cache: "no-store",
+          credentials: "same-origin",
+        });
+        const raw = await response.text();
+        if (!response.ok) {
+          throw new Error(raw || `HTTP ${response.status}`);
+        }
+        const countryCode = parseCloudflareTraceCountryCode(raw);
+        if (!countryCode) {
+          reportNonFatalDiagnostic({
+            operation: "embed.detect-cloudflare-country",
+            kind: "trace-country-missing",
+            resource: traceUrl,
+            note: "Unsupported /cdn-cgi/trace response format",
+            optionalSignature: "embed.detect-cloudflare-country",
+          });
+        }
+        return countryCode;
+      } catch (error) {
+        reportNonFatalDiagnostic({
+          operation: "embed.detect-cloudflare-country",
+          kind: "trace-detect-failed",
+          resource: traceUrl,
+          errorName: String(error && error.name ? error.name : "Error"),
+          errorMessage: String(error && error.message ? error.message : "trace detect failed"),
+          optionalSignature: "embed.detect-cloudflare-country",
+        });
+        return "";
+      }
+    };
+
     const startWarningCountdown = () => {
       if (warningTimer || isEmbedded.value || !showDomainWarning.value) return;
       warningTimer = setInterval(() => {
@@ -248,6 +336,27 @@
       recomputeCurrentHostTrust();
       recomputeEmbedTrust();
       isOfficialDeployment.value = await detectOfficialDeployment();
+      if (state.syncRegionCode && "value" in state.syncRegionCode) {
+        state.syncRegionCode.value = "";
+      }
+      if (state.syncRegionAccessMode && "value" in state.syncRegionAccessMode) {
+        if (isLocalhostFrontend()) {
+          state.syncRegionAccessMode.value = "available";
+          if (state.syncRegionCode && "value" in state.syncRegionCode) {
+            state.syncRegionCode.value = "LOCAL";
+          }
+        } else if (!isOfficialDeployment.value) {
+          state.syncRegionAccessMode.value = "hidden";
+        } else if (!shouldDetectSyncRegionForCurrentHost()) {
+          state.syncRegionAccessMode.value = "available";
+        } else {
+          const countryCode = await detectCloudflareCountryCode();
+          if (state.syncRegionCode && "value" in state.syncRegionCode) {
+            state.syncRegionCode.value = countryCode;
+          }
+          state.syncRegionAccessMode.value = countryCode === "CN" ? "cn-blocked" : countryCode ? "available" : "hidden";
+        }
+      }
       recomputeDomainWarning();
       if (!isEmbedded.value && showDomainWarning.value) {
         warningCountdown.value = 10;

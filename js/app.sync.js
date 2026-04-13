@@ -279,12 +279,21 @@
       return devHostPattern.test(String(window.location.hostname || ""));
     };
 
+    const readSyncRegionAccessMode = () =>
+      String(getRefValue(state.syncRegionAccessMode, isLocalhostFrontend() ? "available" : "checking") || "");
+
     const isOfficialSyncFrontend = () => {
-      if (typeof window === "undefined" || !window.location) return true;
-      return String(window.location.hostname || "").toLowerCase() === "end.canmoe.com";
+      if (isLocalhostFrontend()) return true;
+      return Boolean(getRefValue(state.isOfficialDeployment, false));
     };
 
-    const isSyncFrontendAllowed = () => isLocalhostFrontend() || isOfficialSyncFrontend();
+    const getSyncFrontendBlockReason = () => {
+      if (isLocalhostFrontend()) return "";
+      if (!isOfficialSyncFrontend()) return "official_only";
+      return readSyncRegionAccessMode() === "cn-blocked" ? "cn_region_unavailable" : "";
+    };
+
+    const isSyncFrontendAllowed = () => !getSyncFrontendBlockReason();
 
     const defaultWorkspaceConfig = cloneJson(getRefValue(state.recommendationConfig, {}), {});
 
@@ -843,10 +852,18 @@
     const getOfficialOnlyEntry = () =>
       createSyncTextEntry("sync.error_official_only", "同步功能仅在官方网站 https://end.canmoe.com 可用");
 
+    const getMainlandRegionUnavailableEntry = () =>
+      createSyncTextEntry("sync.error_mainland_unavailable", "中国大陆地区暂不提供云服务。");
+
+    const getSyncFrontendBlockedEntry = () =>
+      getSyncFrontendBlockReason() === "cn_region_unavailable"
+        ? getMainlandRegionUnavailableEntry()
+        : getOfficialOnlyEntry();
+
     const ensureSyncFrontendAllowed = (options) => {
       if (isSyncFrontendAllowed()) return true;
       if (!options || !options.silent) {
-        setSyncError(getOfficialOnlyEntry());
+        setSyncError(getSyncFrontendBlockedEntry());
       }
       return false;
     };
@@ -1200,6 +1217,34 @@
 
     const getSyncText = (key, fallback, params) =>
       coerceSyncText(typeof state.t === "function" ? state.t(key, params) : fallback, fallback || key);
+
+    const formatSyncPaymentChannelLabel = (channel) => {
+      const value = String(channel || "").trim();
+      if (!value) return "";
+      switch (value) {
+        case "alipay":
+          return getSyncText("sync.payment.alipay", value);
+        case "wechat":
+          return getSyncText("sync.payment.wechat", value);
+        default:
+          return value;
+      }
+    };
+
+    const formatSyncPaymentStatusLabel = (status) => {
+      const value = String(status || "").trim();
+      if (!value) return "";
+      switch (value) {
+        case "pending":
+          return getSyncText("sync.payment.status.pending", value);
+        case "approved":
+          return getSyncText("sync.payment.status.approved", value);
+        case "rejected":
+          return getSyncText("sync.payment.status.rejected", value);
+        default:
+          return value;
+      }
+    };
 
     const getPreferredBackendMessage = (payload) => {
       if (!payload || typeof payload !== "object") return "";
@@ -3336,7 +3381,9 @@
     state.syncShowDevPanel = computed(() => isLocalhostFrontend() && runtimeEnv !== "production");
     state.syncFrontendBlocked = computed(() => !isSyncFrontendAllowed());
     state.syncFrontendBlockedMessage = computed(() =>
-      getSyncText("sync.error_official_only", "同步功能仅在官方网站 https://end.canmoe.com 可用")
+      getSyncFrontendBlockReason() === "cn_region_unavailable"
+        ? getSyncText("sync.error_mainland_unavailable", "中国大陆地区暂不提供云服务。")
+        : getSyncText("sync.error_official_only", "同步功能仅在官方网站 https://end.canmoe.com 可用")
     );
     state.syncTurnstileEnabled = computed(() => isTurnstileEnabled());
     state.syncTurnstileMounted = computed(() => Boolean(state.syncTurnstileWidgetId.value));
@@ -3371,6 +3418,8 @@
     state.confirmSyncConflictResolution = confirmSyncConflictResolution;
     state.cancelSyncConflictConfirmation = cancelSyncConflictConfirmation;
     state.refreshSyncSession = refreshSyncSession;
+    state.formatSyncPaymentChannelLabel = formatSyncPaymentChannelLabel;
+    state.formatSyncPaymentStatusLabel = formatSyncPaymentStatusLabel;
     state.clearSyncFeedback = clearSyncFeedback;
     state.saveSyncDevSettings = () => {
       state.syncApiBaseInput.value = String(state.syncApiBaseInput.value || "").trim();
@@ -3380,59 +3429,104 @@
       setSyncNotice(createSyncTextEntry("sync.dev_settings_saved", "开发设置已保存。"), "info");
     };
 
+    let syncRuntimeMounted = false;
+    let syncRuntimeStarted = false;
+    let syncCooldownsRestored = false;
+
+    const startSyncRuntime = () => {
+      if (syncRuntimeStarted || !syncRuntimeMounted || !isSyncFrontendAllowed()) return;
+      syncRuntimeStarted = true;
+      if (typeof window !== "undefined") {
+        const handleSyncVisibilityRecovery = () => {
+          if (!isDocumentVisible() || !isSyncFrontendAllowed()) return;
+          runPassiveRemoteCheck({ silentBlocked: true, silentErrors: true });
+        };
+        const handleSyncPageHide = () => {
+          sendBestEffortLeaveSync();
+        };
+        state.__handleSyncVisibilityRecovery = handleSyncVisibilityRecovery;
+        state.__handleSyncPageHide = handleSyncPageHide;
+        window.addEventListener("focus", handleSyncVisibilityRecovery);
+        window.addEventListener("pageshow", handleSyncVisibilityRecovery);
+        window.addEventListener("pagehide", handleSyncPageHide);
+        if (typeof document !== "undefined") {
+          document.addEventListener("visibilitychange", handleSyncVisibilityRecovery);
+        }
+        remoteRefreshTimer = setInterval(() => {
+          if (!isDocumentVisible() || !isSyncFrontendAllowed()) return;
+          runPassiveRemoteCheck({ silentBlocked: true, silentErrors: true });
+        }, remoteRefreshIntervalMs);
+      }
+      if (!syncCooldownsRestored) {
+        restoreCooldownFromSession("verify");
+        restoreCooldownFromSession("verify-submit");
+        restoreCooldownFromSession("change");
+        restoreCooldownFromSession("reset-request");
+        syncCooldownsRestored = true;
+      }
+      if (readSessionHint()) {
+        refreshSyncSession(false, { forceFullSnapshot: true });
+      }
+      if (state.showSyncModal.value) {
+        void mountSyncTurnstile();
+      }
+    };
+
+    const stopSyncRuntime = () => {
+      stopRemoteRefreshTimer();
+      const handleSyncVisibilityRecovery = state.__handleSyncVisibilityRecovery;
+      if (handleSyncVisibilityRecovery && typeof window !== "undefined") {
+        window.removeEventListener("focus", handleSyncVisibilityRecovery);
+        window.removeEventListener("pageshow", handleSyncVisibilityRecovery);
+      }
+      const handleSyncPageHide = state.__handleSyncPageHide;
+      if (handleSyncPageHide && typeof window !== "undefined") {
+        window.removeEventListener("pagehide", handleSyncPageHide);
+      }
+      if (handleSyncVisibilityRecovery && typeof document !== "undefined") {
+        document.removeEventListener("visibilitychange", handleSyncVisibilityRecovery);
+      }
+      state.__handleSyncVisibilityRecovery = null;
+      state.__handleSyncPageHide = null;
+      clearAdblockDetectionTimer();
+      state.showAdblockNotice.value = false;
+      state.aboutAdLoaded.value = false;
+      if (!isSyncFrontendAllowed()) {
+        state.showSyncModal.value = false;
+        state.syncShowPasswordModal.value = false;
+        state.syncShowEmailModal.value = false;
+        clearSyncModalCleanupTimer();
+        destroySyncTurnstileWidget();
+      }
+      syncRuntimeStarted = false;
+    };
+
+    const syncRuntimeStateChanged = () => {
+      if (!syncRuntimeMounted) return;
+      if (isSyncFrontendAllowed()) {
+        startSyncRuntime();
+        return;
+      }
+      stopSyncRuntime();
+    };
+
     if (typeof onMounted === "function") {
       onMounted(() => {
-        if (typeof window !== "undefined") {
-          const handleSyncVisibilityRecovery = () => {
-            if (!isDocumentVisible()) return;
-            runPassiveRemoteCheck({ silentBlocked: true, silentErrors: true });
-          };
-          const handleSyncPageHide = () => {
-            sendBestEffortLeaveSync();
-          };
-          state.__handleSyncVisibilityRecovery = handleSyncVisibilityRecovery;
-          state.__handleSyncPageHide = handleSyncPageHide;
-          window.addEventListener("focus", handleSyncVisibilityRecovery);
-          window.addEventListener("pageshow", handleSyncVisibilityRecovery);
-          window.addEventListener("pagehide", handleSyncPageHide);
-          if (typeof document !== "undefined") {
-            document.addEventListener("visibilitychange", handleSyncVisibilityRecovery);
-          }
-          remoteRefreshTimer = setInterval(() => {
-            if (!isDocumentVisible()) return;
-            runPassiveRemoteCheck({ silentBlocked: true, silentErrors: true });
-          }, remoteRefreshIntervalMs);
-        }
-        if (readSessionHint()) {
-          refreshSyncSession(false, { forceFullSnapshot: true });
-        }
-        restoreCooldownFromSession('verify');
-        restoreCooldownFromSession('verify-submit');
-        restoreCooldownFromSession('change');
-        restoreCooldownFromSession('reset-request');
-        if (state.showSyncModal.value) {
-          void mountSyncTurnstile();
-        }
+        syncRuntimeMounted = true;
+        syncRuntimeStateChanged();
+      });
+    }
+
+    if (typeof watch === "function") {
+      watch([state.isOfficialDeployment, state.syncRegionAccessMode], () => {
+        syncRuntimeStateChanged();
       });
     }
 
     if (typeof onBeforeUnmount === "function") {
       onBeforeUnmount(() => {
-        stopRemoteRefreshTimer();
-        const handleSyncVisibilityRecovery = state.__handleSyncVisibilityRecovery;
-        if (handleSyncVisibilityRecovery && typeof window !== "undefined") {
-          window.removeEventListener("focus", handleSyncVisibilityRecovery);
-          window.removeEventListener("pageshow", handleSyncVisibilityRecovery);
-        }
-        const handleSyncPageHide = state.__handleSyncPageHide;
-        if (handleSyncPageHide && typeof window !== "undefined") {
-          window.removeEventListener("pagehide", handleSyncPageHide);
-        }
-        if (handleSyncVisibilityRecovery && typeof document !== "undefined") {
-          document.removeEventListener("visibilitychange", handleSyncVisibilityRecovery);
-        }
-        state.__handleSyncVisibilityRecovery = null;
-        state.__handleSyncPageHide = null;
+        syncRuntimeMounted = false;
+        stopSyncRuntime();
         clearSyncModalCleanupTimer();
         destroySyncTurnstileWidget();
         clearCooldownTimer('verify');
