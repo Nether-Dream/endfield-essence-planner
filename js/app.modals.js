@@ -103,14 +103,14 @@
         state.syncRegionAccessMode && "value" in state.syncRegionAccessMode
           ? String(state.syncRegionAccessMode.value || "")
           : "";
+      const localhostMode = Boolean(
+        state.syncIsLocalhostMode && "value" in state.syncIsLocalhostMode && state.syncIsLocalhostMode.value
+      );
       if (syncAccessMode === "cn-blocked") {
         openCnSyncUnavailableModal();
         return;
       }
-      if (
-        syncAccessMode !== "available" &&
-        !(state.syncIsLocalhostMode && "value" in state.syncIsLocalhostMode && state.syncIsLocalhostMode.value)
-      ) {
+      if (!localhostMode && (syncAccessMode === "hidden" || syncAccessMode === "")) {
         return;
       }
       state.showSyncModal.value = true;
@@ -188,18 +188,22 @@
       }
     };
 
+    const isModalFlagActive = (flag) =>
+      Boolean(flag && typeof flag === "object" && "value" in flag ? flag.value : flag);
+
     const hasActiveModal = () =>
       Boolean(
-        state.showNotice.value ||
-          state.showChangelog.value ||
-        state.showAbout.value ||
-        state.showFaq.value ||
-        state.showSyncModal.value ||
-          state.showTutorialSkipConfirm.value ||
-          state.showStorageErrorModal.value ||
-          state.showStorageClearConfirmModal.value ||
-          state.showStorageIgnoreConfirmModal.value ||
-          (state.showMarksImportConfirmModal && state.showMarksImportConfirmModal.value)
+        isModalFlagActive(state.showNotice) ||
+          isModalFlagActive(state.showChangelog) ||
+          isModalFlagActive(state.showAbout) ||
+          isModalFlagActive(state.showFaq) ||
+          isModalFlagActive(state.showSyncModal) ||
+          isModalFlagActive(state.showCnSyncUnavailableModal) ||
+          isModalFlagActive(state.showTutorialSkipConfirm) ||
+          isModalFlagActive(state.showStorageErrorModal) ||
+          isModalFlagActive(state.showStorageClearConfirmModal) ||
+          isModalFlagActive(state.showStorageIgnoreConfirmModal) ||
+          isModalFlagActive(state.showMarksImportConfirmModal)
       );
 
     const clearStaleLockCheck = () => {
@@ -333,19 +337,7 @@
         storageIgnoreConfirmOpen,
         marksImportConfirmOpen,
       ]) => {
-        const hasOpenModal = Boolean(
-          noticeOpen ||
-            changelogOpen ||
-             aboutOpen ||
-             faqOpen ||
-             syncOpen ||
-             cnSyncUnavailableOpen ||
-             skipOpen ||
-             storageErrorOpen ||
-             storageClearConfirmOpen ||
-             storageIgnoreConfirmOpen ||
-             marksImportConfirmOpen
-        );
+        const hasOpenModal = hasActiveModal();
         if (modalUnlockTimer) {
           clearTimeout(modalUnlockTimer);
           modalUnlockTimer = null;

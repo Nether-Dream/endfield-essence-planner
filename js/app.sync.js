@@ -290,7 +290,10 @@
     const getSyncFrontendBlockReason = () => {
       if (isLocalhostFrontend()) return "";
       if (!isOfficialSyncFrontend()) return "official_only";
-      return readSyncRegionAccessMode() === "cn-blocked" ? "cn_region_unavailable" : "";
+      const accessMode = readSyncRegionAccessMode();
+      if (accessMode === "cn-blocked") return "cn_region_unavailable";
+      if (accessMode === "detect-failed") return "region_detection_failed";
+      return "";
     };
 
     const isSyncFrontendAllowed = () => !getSyncFrontendBlockReason();
@@ -364,9 +367,20 @@
       return candidate;
     };
 
+    const normalizeExcludedPlannerFields = (planner) => {
+      if (!isPlainObject(planner) || !Array.isArray(planner.excludedFields)) return [];
+      return planner.excludedFields
+        .map((field) => String(field || "").trim())
+        .filter((field, index, list) => field && list.indexOf(field) === index)
+        .sort();
+    };
+
     const normalizeComparableData = (raw, options) => {
       const source = isPlainObject(raw) ? raw : {};
       const planner = isPlainObject(source.planner) ? source.planner : source;
+      const excludedFields = normalizeExcludedPlannerFields(planner);
+      const customWeaponsExcluded = excludedFields.includes("customWeapons");
+      const hasCustomWeaponsField = Object.prototype.hasOwnProperty.call(planner, "customWeapons");
       const marksSource = isPlainObject(planner.marks) && "items" in planner.marks
         ? planner.marks.items
         : planner.marks;
@@ -374,17 +388,23 @@
         ? planner.customWeapons.items
         : planner.customWeapons;
       const workspaceSource = isPlainObject(planner.workspace) ? planner.workspace : {};
-      return {
+      const comparable = {
         marks:
           typeof state.normalizeWeaponMarks === "function"
             ? state.normalizeWeaponMarks(marksSource)
             : cloneJson(marksSource, {}),
-        customWeapons:
-          typeof state.sanitizeCustomWeapons === "function"
-            ? state.sanitizeCustomWeapons(customWeaponsSource)
-            : cloneJson(customWeaponsSource, []),
         workspace: normalizeWorkspace(workspaceSource, options),
       };
+      if (excludedFields.length > 0) {
+        comparable.excludedFields = excludedFields;
+      }
+      if (hasCustomWeaponsField || !customWeaponsExcluded) {
+        comparable.customWeapons =
+          typeof state.sanitizeCustomWeapons === "function"
+            ? state.sanitizeCustomWeapons(customWeaponsSource)
+            : cloneJson(customWeaponsSource, []);
+      }
+      return comparable;
     };
 
     const normalizeDurableComparableData = (raw, options) => {
@@ -423,6 +443,8 @@
           updatedAt: now,
           items: comparable.customWeapons,
         };
+      } else {
+        planner.excludedFields = ["customWeapons"];
       }
       return {
         schemaVersion: 1,
@@ -855,10 +877,15 @@
     const getMainlandRegionUnavailableEntry = () =>
       createSyncTextEntry("sync.error_mainland_unavailable", "中国大陆地区暂不提供云服务。");
 
+    const getRegionDetectionFailedEntry = () =>
+      createSyncTextEntry("sync.error_region_detection_failed", "地区检测失败，请稍后刷新重试。");
+
     const getSyncFrontendBlockedEntry = () =>
       getSyncFrontendBlockReason() === "cn_region_unavailable"
         ? getMainlandRegionUnavailableEntry()
-        : getOfficialOnlyEntry();
+        : getSyncFrontendBlockReason() === "region_detection_failed"
+          ? getRegionDetectionFailedEntry()
+          : getOfficialOnlyEntry();
 
     const ensureSyncFrontendAllowed = (options) => {
       if (isSyncFrontendAllowed()) return true;
@@ -1320,7 +1347,7 @@
       const translated = translateSyncError(raw);
       if (translated && translated !== raw) return maybeAppendSupportHint(translated);
       if (!isSyncFrontendAllowed()) {
-        return getSyncText("sync.error_official_only", "同步功能仅在官方网站 https://end.canmoe.com 可用");
+        return resolveSyncEntry(getSyncFrontendBlockedEntry()).text;
       }
       if (!raw || /^TypeError\b/i.test(raw) || /Failed to fetch|Load failed|NetworkError/i.test(raw)) {
         const networkError = raw || '网络连接失败';
@@ -1538,8 +1565,13 @@
 
     const applyRemotePayload = (payload, options) => {
       const comparable = normalizeComparableData(payload);
+      const customWeaponsExcluded = Array.isArray(comparable.excludedFields)
+        && comparable.excludedFields.includes("customWeapons")
+        && !Object.prototype.hasOwnProperty.call(comparable, "customWeapons");
       state.weaponMarks.value = comparable.marks;
-      state.customWeapons.value = comparable.customWeapons;
+      if (!customWeaponsExcluded) {
+        state.customWeapons.value = comparable.customWeapons;
+      }
       state.selectedNames.value = comparable.workspace.selectedNames || [];
       state.schemeBaseSelections.value = comparable.workspace.schemeBaseSelections || {};
       state.recommendationConfig.value = comparable.workspace.recommendationConfig || {};
@@ -1742,7 +1774,9 @@
     };
 
     const formatClaimTime = (isoString) => {
-      return formatSyncDateTime(isoString) || "-";
+      const raw = String(isoString || "");
+      const formatted = formatSyncDateTime(raw);
+      return formatted || raw || "-";
     };
 
     const closeSyncPasswordModal = () => {
@@ -1775,7 +1809,13 @@
         state.syncPasswordChangeNotice.value = "";
       }
       if (!state.syncAuthenticated.value && state.syncPasswordResetRequestAccountInput && "value" in state.syncPasswordResetRequestAccountInput) {
-        state.syncPasswordResetRequestAccountInput.value = String(state.syncAccountInput.value || "").trim();
+        const loginEmail = String(state.syncAccountInput.value || "").trim();
+        const registerEmail = String(state.syncEmailInput.value || "").trim();
+        state.syncPasswordResetRequestAccountInput.value = isLikelyEmail(loginEmail)
+          ? loginEmail
+          : isLikelyEmail(registerEmail)
+            ? registerEmail
+            : "";
       }
     };
 
@@ -2032,16 +2072,31 @@
       const authenticated = Boolean(state.syncAuthenticated.value);
       const account = authenticated
         ? String(
-            (state.syncUser && state.syncUser.value && (state.syncUser.value.email || state.syncUser.value.username)) || ""
+            (state.syncUser && state.syncUser.value && state.syncUser.value.email) || ""
           ).trim()
         : String(state.syncPasswordResetRequestAccountInput.value || "").trim();
       state.syncPasswordChangeError.value = "";
       state.syncPasswordChangeNotice.value = "";
+      if (authenticated && !account) {
+        const message = createSyncTextEntry(
+          "sync.error_reset_email_unavailable",
+          "当前账号没有可用于接收重置码的邮箱。"
+        );
+        state.syncPasswordChangeError.value = resolveSyncEntry(message).text;
+        setSyncError(message);
+        return;
+      }
       if (!account) {
         const message = createSyncTextEntry(
           "sync.error_missing_reset_password_account",
-          "请输入用户名或邮箱。"
+          "请输入邮箱地址。"
         );
+        state.syncPasswordChangeError.value = resolveSyncEntry(message).text;
+        setSyncError(message);
+        return;
+      }
+      if (!authenticated && !isLikelyEmail(account)) {
+        const message = createSyncTextEntry("sync.error_invalid_email", "请输入有效邮箱地址。");
         state.syncPasswordChangeError.value = resolveSyncEntry(message).text;
         setSyncError(message);
         return;
@@ -2232,7 +2287,7 @@
       if (!me || typeof me !== "object") return;
       const planTier = String(me.plan_tier || "free");
       const planExpiresAtRaw = String(me.plan_expires_at || me.premium_until || me.premium_trial_until || "");
-      const planExpiresAt = formatClaimTime(planExpiresAtRaw) || planExpiresAtRaw;
+      const planExpiresAt = formatClaimTime(planExpiresAtRaw);
       const expiringSoon = Boolean(me.plan_expiring_soon);
       const expired = Boolean(me.plan_expired);
       const autoSyncAllowed = Boolean(me.auto_sync_allowed);
@@ -2374,7 +2429,7 @@
         },
         missing_reset_password_account: {
           key: 'sync.error_missing_reset_password_account',
-          fallback: '请输入用户名或邮箱。',
+          fallback: '请输入邮箱地址。',
         },
         missing_new_password_fields: {
           key: 'sync.error_missing_new_password_fields',
@@ -3042,8 +3097,7 @@
       } else {
         state.syncAccountInput.value = "";
       }
-      clearSyncError();
-      clearSyncNotice();
+      clearSyncFeedback();
     });
 
     const submitSyncPasswordChange = async () => {
@@ -3070,8 +3124,14 @@
         if (!authenticated && !account) {
           const message = createSyncTextEntry(
             "sync.error_missing_reset_password_account",
-            "请输入用户名或邮箱。"
+            "请输入邮箱地址。"
           );
+          state.syncPasswordChangeError.value = resolveSyncEntry(message).text;
+          setSyncError(message);
+          return;
+        }
+        if (!authenticated && !isLikelyEmail(account)) {
+          const message = createSyncTextEntry("sync.error_invalid_email", "请输入有效邮箱地址。");
           state.syncPasswordChangeError.value = resolveSyncEntry(message).text;
           setSyncError(message);
           return;
@@ -3381,9 +3441,7 @@
     state.syncShowDevPanel = computed(() => isLocalhostFrontend() && runtimeEnv !== "production");
     state.syncFrontendBlocked = computed(() => !isSyncFrontendAllowed());
     state.syncFrontendBlockedMessage = computed(() =>
-      getSyncFrontendBlockReason() === "cn_region_unavailable"
-        ? getSyncText("sync.error_mainland_unavailable", "中国大陆地区暂不提供云服务。")
-        : getSyncText("sync.error_official_only", "同步功能仅在官方网站 https://end.canmoe.com 可用")
+      isSyncFrontendAllowed() ? "" : resolveSyncEntry(getSyncFrontendBlockedEntry()).text
     );
     state.syncTurnstileEnabled = computed(() => isTurnstileEnabled());
     state.syncTurnstileMounted = computed(() => Boolean(state.syncTurnstileWidgetId.value));

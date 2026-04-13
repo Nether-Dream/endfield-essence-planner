@@ -847,7 +847,7 @@
                   <div class="sync-auth-field">
                     <label class="secondary-label">{{ t("sync.payment_reference_label") }}</label>
                     <input
-                      v-model="syncPaymentReferenceInput"
+                      v-model.trim="syncPaymentReferenceInput"
                       class="secondary-input"
                       type="text"
                       :placeholder="t('sync.payment_reference_hint')"
@@ -858,7 +858,7 @@
                   <div v-if="syncPaymentChannelInput === 'alipay'" class="sync-auth-field">
                     <label class="secondary-label">{{ t("sync.payment_merchant_order_label") }}</label>
                     <input
-                      v-model="syncPaymentMerchantOrderInput"
+                      v-model.trim="syncPaymentMerchantOrderInput"
                       class="secondary-input"
                       type="text"
                       :placeholder="t('sync.payment_merchant_order_hint')"
@@ -881,13 +881,13 @@
                   <div class="secondary-actions">
                     <button
                       class="about-button"
-                      :disabled="syncBusy || syncFrontendBlocked || !syncPaymentReferenceInput || (syncPaymentChannelInput === 'alipay' && !syncPaymentMerchantOrderInput)"
+                      :disabled="syncBusy || syncFrontendBlocked || !(syncPaymentReferenceInput || '').trim() || (syncPaymentChannelInput === 'alipay' && !(syncPaymentMerchantOrderInput || '').trim())"
                       @click="submitPaymentClaim"
                     >
                       {{ t("sync.submit_payment_claim_action") }}
                     </button>
-                    <span v-if="!syncPaymentReferenceInput" class="secondary-hint">{{ t("sync.payment_reference_required_hint") }}</span>
-                    <span v-else-if="syncPaymentChannelInput === 'alipay' && !syncPaymentMerchantOrderInput" class="secondary-hint">{{ t("sync.error_merchant_order_required") }}</span>
+                    <span v-if="!(syncPaymentReferenceInput || '').trim()" class="secondary-hint">{{ t("sync.payment_reference_required_hint") }}</span>
+                    <span v-else-if="syncPaymentChannelInput === 'alipay' && !(syncPaymentMerchantOrderInput || '').trim()" class="secondary-hint">{{ t("sync.error_merchant_order_required") }}</span>
                   </div>
                   </template>
                   <div v-if="syncUserPaymentClaims && syncUserPaymentClaims.length" class="sync-claim-history">
@@ -1041,12 +1041,12 @@
                 {{ syncAuthenticated && syncPasswordChangeMode === 'current' ? t("sync.change_password_signout_hint") : t(syncAuthenticated ? "sync.reset_password_logged_in_hint" : "sync.reset_password_logged_out_hint") }}
               </div>
                 <div v-if="!syncAuthenticated" class="sync-auth-field">
-                  <label class="secondary-label">{{ t("sync.account_label") }}</label>
+                  <label class="secondary-label">{{ t("sync.email_label") }}</label>
                   <input
                     v-model.trim="syncPasswordResetRequestAccountInput"
                     class="secondary-input"
-                    type="text"
-                    autocomplete="username"
+                    type="email"
+                    autocomplete="email"
                     maxlength="191"
                     :disabled="syncBusy || syncFrontendBlocked || syncResetCodeRequestCooldownSeconds > 0"
                     @keydown.enter="requestSyncResetCode"

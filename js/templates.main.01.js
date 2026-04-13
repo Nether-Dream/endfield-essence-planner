@@ -53,9 +53,11 @@
             </select>
           </div>
           <button
-            v-if="syncRegionAccessMode === 'available'"
+            v-if="syncRegionAccessMode !== 'hidden' && syncRegionAccessMode !== 'cn-blocked'"
             class="about-button login-button profile-entry-button"
-            :title="syncAuthenticated && syncUser && syncUser.username ? syncUser.username : t('sync.login_action')"
+            :title="syncRegionAccessMode === 'detect-failed'
+              ? t('sync.region_detection_failed_title')
+              : (syncAuthenticated && syncUser && syncUser.username ? syncUser.username : t('sync.login_action'))"
             @click="openSyncModal"
           >
             <span class="profile-entry-icon" aria-hidden="true">
@@ -65,9 +67,14 @@
               </svg>
             </span>
             <span class="profile-entry-label">
-              {{ syncAuthenticated && syncUser && syncUser.username ? syncUser.username : t("sync.login_action") }}
+              {{ syncRegionAccessMode === 'detect-failed'
+                ? t("sync.region_detection_failed_action")
+                : (syncAuthenticated && syncUser && syncUser.username ? syncUser.username : t("sync.login_action")) }}
             </span>
-            <span v-if="syncAuthenticated && syncUser && syncUser.badge" class="sync-badge-pill profile-entry-badge">
+            <span
+              v-if="syncRegionAccessMode !== 'detect-failed' && syncAuthenticated && syncUser && syncUser.badge"
+              class="sync-badge-pill profile-entry-badge"
+            >
               {{ syncUser.badge === 'supporter' ? t('sync.badge_supporter') : syncUser.badge }}
             </span>
           </button>

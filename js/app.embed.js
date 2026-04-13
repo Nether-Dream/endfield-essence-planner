@@ -354,7 +354,12 @@
           if (state.syncRegionCode && "value" in state.syncRegionCode) {
             state.syncRegionCode.value = countryCode;
           }
-          state.syncRegionAccessMode.value = countryCode === "CN" ? "cn-blocked" : countryCode ? "available" : "hidden";
+          state.syncRegionAccessMode.value =
+            countryCode === "CN"
+              ? "cn-blocked"
+              : countryCode
+                ? "available"
+                : "detect-failed";
         }
       }
       recomputeDomainWarning();

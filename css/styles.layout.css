@@ -1107,6 +1107,13 @@
         50% { box-shadow: 0 0 0 4px rgba(var(--color-warning-rgb), var(--alpha-18)); }
       }
 
+      @media (prefers-reduced-motion: reduce) {
+        .ghost-button.email-unverified-highlight {
+          animation: none !important;
+          box-shadow: none !important;
+        }
+      }
+
       .sync-password-panel {
         display: grid;
         gap: 8px;
