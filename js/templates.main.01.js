@@ -246,7 +246,10 @@
           </nav>
         </div>
       </header>
-      <section v-if="!syncAuthenticated || (syncUser && !syncUser.ad_free)" class="hero-ad-banner">
+      <section
+        v-if="heroAdBannerEnabled && (!syncAuthenticated || (syncUser && !syncUser.ad_free))"
+        class="hero-ad-banner"
+      >
         <span class="hero-ad-badge">广告/AD</span>
         <a class="about-button hero-ad-link" href="https://pan.quark.cn/s/27540d6f3706" target="_blank" rel="noreferrer noopener">
           {{ t("sync.download_background") }}

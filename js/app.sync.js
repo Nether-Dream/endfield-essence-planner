@@ -14,7 +14,7 @@
     const syncVerificationSubmitCooldownSessionKey = state.syncVerificationSubmitCooldownSessionKey || "planner-sync-email-verify-submit-cooldown:v1";
     const syncEmailChangeCooldownSessionKey = state.syncEmailChangeCooldownSessionKey || "planner-sync-email-change-cooldown:v1";
     const syncResetCodeRequestCooldownSessionKey = state.syncResetCodeRequestCooldownSessionKey || "planner-sync-reset-code-request-cooldown:v1";
-    const getDefaultApiBase = () => "https://ldy.canmoe.com/api";
+    const getDefaultApiBase = () => "https://endapi.canmoe.com/api";
     const devHostPattern = /^(localhost|127\.0\.0\.1)$/i;
     const defaultMeta = {
       serverVersion: 0,
@@ -399,6 +399,22 @@
       const now = new Date().toISOString();
       const versionInfo = readVersionInfo();
       const comparable = buildLocalComparable();
+      const planTier = String(state.syncUser && state.syncUser.value && state.syncUser.value.plan_tier || "free");
+      const isPremium = planTier === "premium";
+      const planner = {
+        marks: {
+          updatedAt: now,
+          items: comparable.marks,
+        },
+        workspace: Object.assign({ updatedAt: now }, comparable.workspace),
+      };
+      // Free users: exclude customWeapons from upload payload
+      if (isPremium) {
+        planner.customWeapons = {
+          updatedAt: now,
+          items: comparable.customWeapons,
+        };
+      }
       return {
         schemaVersion: 1,
         capturedAt: now,
@@ -409,17 +425,7 @@
           host:
             typeof window !== "undefined" && window.location ? String(window.location.host || "") : "",
         },
-        planner: {
-          marks: {
-            updatedAt: now,
-            items: comparable.marks,
-          },
-          customWeapons: {
-            updatedAt: now,
-            items: comparable.customWeapons,
-          },
-          workspace: Object.assign({ updatedAt: now }, comparable.workspace),
-        },
+        planner,
       };
     };
 
@@ -816,7 +822,7 @@
     };
 
     const buildApiUrl = (endpoint, query) => {
-      const base = `${resolveApiBase()}/${endpoint}.php`;
+      const base = `${resolveApiBase()}/${endpoint}`;
       if (!isPlainObject(query)) return base;
       const params = new URLSearchParams();
       Object.keys(query).forEach((key) => {
@@ -1129,6 +1135,7 @@
         email_unavailable: "sync.error_email_unavailable",
         email_unchanged: "sync.error_email_unchanged",
         email_send_failed: "sync.error_email_send_failed",
+        email_domain_unsupported: "sync.error_email_domain_unsupported",
         email_verification_issue_failed: "sync.error_email_verification_issue_failed",
         smtp_disabled: "sync.error_smtp_disabled",
         smtp_config_invalid: "sync.error_smtp_config_invalid",
@@ -1138,6 +1145,7 @@
         missing_verification_code: "sync.error_missing_verification_code",
         invalid_verification_code: "sync.error_invalid_verification_code",
         invalid_payment_claim: "sync.error_invalid_payment_claim",
+        merchant_order_no_required_for_alipay: "sync.error_merchant_order_required",
         payment_claim_duplicate: "sync.error_payment_claim_duplicate",
         payment_claim_failed: "sync.error_payment_claim_failed",
         register_conflict: "sync.error_register_conflict",
@@ -1157,8 +1165,33 @@
         forbidden: "sync.error_official_only",
         https_required: "sync.error_https_required",
         rate_limited: "sync.error_rate_limited",
+        custom_weapons_not_allowed: "sync.error_custom_weapons_not_allowed",
         sync_failed: "sync.error_sync_failed",
         api_abuse_blocked: "sync.error_api_abuse_blocked",
+        // ── Previously missing backend error codes ──
+        missing_credentials: "sync.error_missing_credentials",
+        invalid_email: "sync.error_invalid_email",
+        weak_password: "sync.error_weak_password",
+        turnstile_verification_failed: "sync.error_turnstile_failed",
+        invalid_session: "sync.error_invalid_session",
+        session_expired: "sync.error_session_expired",
+        missing_token: "sync.error_missing_token",
+        email_already_verified: "sync.error_email_already_verified",
+        missing_code: "sync.error_missing_verification_code",
+        no_pending_email: "sync.error_no_pending_email",
+        version_conflict: "sync.error_conflict",
+        invalid_json: "sync.error_invalid_payload",
+        user_not_found: "sync.error_invalid_session",
+        temporarily_blocked: "sync.error_rate_limited",
+        invalid_host: "sync.error_forbidden_host",
+        rate_limit_exceeded: "sync.error_rate_limited",
+        missing_email: "sync.error_invalid_email",
+        missing_fields: "sync.error_bad_request",
+        invalid_channel: "sync.error_bad_request",
+        reference_too_long: "sync.error_bad_request",
+        merchant_order_no_too_long: "sync.error_bad_request",
+        invalid_paid_time_format: "sync.error_bad_request",
+        invalid_or_expired_code: "sync.error_invalid_reset_code",
       };
       const key = map[String(code || "")];
       if (key) return getSyncText(key, String(code || ""));
@@ -1219,9 +1252,23 @@
         }
         return text;
       };
+      const appendRetryAfter = (text) => {
+        if (errorCode !== "rate_limit_exceeded" && errorCode !== "rate_limited" && errorCode !== "temporarily_blocked") return text;
+        const retryAfterSec = Number(payload && payload.retry_after);
+        if (!Number.isFinite(retryAfterSec) || retryAfterSec <= 0) return text;
+        const base = coerceSyncText(text, "");
+        if (retryAfterSec >= 60) {
+          const mins = Math.ceil(retryAfterSec / 60);
+          const hint = getSyncText("sync.error_retry_after_minutes", "{min}分钟后可重试", { min: mins });
+          return `${base}（${hint}）`;
+        }
+        const secs = Math.ceil(retryAfterSec);
+        const hint = getSyncText("sync.error_retry_after_seconds", "{sec}秒后可重试", { sec: secs });
+        return `${base}（${hint}）`;
+      };
       const translatedByCode = translateSyncError(errorCode);
       if (translatedByCode && translatedByCode !== errorCode) {
-        return maybeAppendSupportHint(translatedByCode);
+        return appendRetryAfter(maybeAppendSupportHint(translatedByCode));
       }
       const backendMessage = getPreferredBackendMessage(payload);
       const raw = coerceSyncText(backendMessage || message, "");
@@ -1396,7 +1443,11 @@
     const maybeShowAdblockNoticeOnce = () => {
       if (typeof document === 'undefined' || typeof window === 'undefined') return;
       if (readAdblockDismissedInSession()) return;
-      const shouldShowHeroAd = !Boolean(state.syncAuthenticated.value && state.syncUser.value && state.syncUser.value.ad_free);
+      // Follow the shared render flag so disabling the banner does not trigger
+      // false-positive adblock notices.
+      const shouldShowHeroAd =
+        Boolean(getRefValue(state.heroAdBannerEnabled, false)) &&
+        !Boolean(state.syncAuthenticated.value && state.syncUser.value && state.syncUser.value.ad_free);
       if (!shouldShowHeroAd) {
         clearAdblockDetectionTimer();
         state.aboutAdLoaded.value = false;
@@ -1624,6 +1675,31 @@
       }
     };
 
+    const clearPaymentClaimForm = () => {
+      if (state.syncPaymentChannelInput && "value" in state.syncPaymentChannelInput) {
+        state.syncPaymentChannelInput.value = "";
+      }
+      if (state.syncPaymentReferenceInput && "value" in state.syncPaymentReferenceInput) {
+        state.syncPaymentReferenceInput.value = "";
+      }
+      if (state.syncPaymentMerchantOrderInput && "value" in state.syncPaymentMerchantOrderInput) {
+        state.syncPaymentMerchantOrderInput.value = "";
+      }
+      if (state.syncPaymentPaidTimeInput && "value" in state.syncPaymentPaidTimeInput) {
+        state.syncPaymentPaidTimeInput.value = "";
+      }
+      if (state.syncPaymentClaimError && "value" in state.syncPaymentClaimError) {
+        state.syncPaymentClaimError.value = "";
+      }
+      if (state.syncPaymentClaimNotice && "value" in state.syncPaymentClaimNotice) {
+        state.syncPaymentClaimNotice.value = "";
+      }
+    };
+
+    const formatClaimTime = (isoString) => {
+      return formatSyncDateTime(isoString) || "-";
+    };
+
     const closeSyncPasswordModal = () => {
       if (state.syncShowPasswordModal && "value" in state.syncShowPasswordModal) {
         state.syncShowPasswordModal.value = false;
@@ -1725,16 +1801,18 @@
         setSyncError(message);
         return;
       }
+      state.syncEmailActionError.value = '';
       state.syncEmailActionNotice.value = typeof state.t === 'function' ? state.t('sync.email_sending_notice') : '正在发送验证码...';
       state.syncBusy.value = true;
       let requestError = null;
       try {
-        await requestJson('change-email', {
+        await requestJson('email/send-verification', {
           method: 'POST',
           body: JSON.stringify({ email: currentEmail }),
         });
         const notice = createSyncTextEntry('sync.verification_code_sent_notice', '验证码已发送，请查收邮箱。');
         state.syncEmailActionNotice.value = resolveSyncEntry(notice).text;
+        state.syncEmailActionError.value = '';
         setSyncNotice(notice, 'info');
       } catch (error) {
         requestError = error;
@@ -1770,12 +1848,13 @@
           }
           state.syncEmailActionNotice.value = typeof state.t === 'function' ? state.t('sync.email_verifying_notice') : '正在验证邮箱...';
           requestAttempted = true;
-          await requestJson('verify-email', {
+          await requestJson('email/verify', {
             method: 'POST',
             body: JSON.stringify({ code: verificationCode }),
           });
           const notice = createSyncTextEntry('sync.email_verified_notice', '邮箱验证已完成。');
           state.syncEmailActionNotice.value = resolveSyncEntry(notice).text;
+          state.syncEmailActionError.value = '';
           await refreshSyncSession(true);
           closeSyncEmailModal();
           setSyncNotice(notice, 'success');
@@ -1812,12 +1891,13 @@
 
         state.syncEmailActionNotice.value = typeof state.t === 'function' ? state.t('sync.email_changing_notice') : '正在修改邮箱...';
         requestAttempted = true;
-        await requestJson('change-email', {
+        await requestJson('email/request-change', {
           method: 'POST',
-          body: JSON.stringify({ email: nextEmail }),
+          body: JSON.stringify({ newEmail: nextEmail }),
         });
         const notice = createSyncTextEntry('sync.email_change_notice', '邮箱已更新并发送验证码。');
         state.syncEmailActionNotice.value = resolveSyncEntry(notice).text;
+        state.syncEmailActionError.value = '';
         await refreshSyncSession(true);
         setSyncNotice(notice, 'info');
       } catch (error) {
@@ -1844,8 +1924,16 @@
       }
       const channel = String(state.syncPaymentChannelInput.value || '').trim();
       const reference = String(state.syncPaymentReferenceInput.value || '').trim();
+      const merchantOrderNo = String(state.syncPaymentMerchantOrderInput.value || '').trim();
+      const paidTime = String(state.syncPaymentPaidTimeInput.value || '').trim();
       if (!channel || !reference) {
         const message = createSyncTextEntry('sync.error_invalid_payment_claim', '请先选择支付方式并填写支付凭证。');
+        state.syncPaymentClaimError.value = resolveSyncEntry(message).text;
+        setSyncError(message);
+        return;
+      }
+      if (channel === 'alipay' && !merchantOrderNo) {
+        const message = createSyncTextEntry('sync.error_merchant_order_required', '支付宝渠道需同时填写商家订单号。');
         state.syncPaymentClaimError.value = resolveSyncEntry(message).text;
         setSyncError(message);
         return;
@@ -1854,32 +1942,42 @@
       state.syncPaymentClaimNotice.value = '';
       state.syncBusy.value = true;
       try {
-        const result = await requestJson('submit-payment-claim', {
+        const payload = { channel, externalReference: reference };
+        if (channel === 'alipay') payload.merchantOrderNo = merchantOrderNo;
+        if (paidTime) payload.paidTime = paidTime;
+        const result = await requestJson('payment/submit-claim', {
           method: 'POST',
-          body: JSON.stringify({ channel, reference }),
+          body: JSON.stringify(payload),
         });
         state.syncPaymentChannelInput.value = '';
         state.syncPaymentReferenceInput.value = '';
-        const status = result && result.claim && result.claim.status ? String(result.claim.status) : 'pending';
+        state.syncPaymentMerchantOrderInput.value = '';
+        state.syncPaymentPaidTimeInput.value = '';
         const notice = createSyncTextEntry(
-          status === 'matched_auto' ? 'sync.payment_claim_matched_notice' : 'sync.payment_claim_pending_notice',
-          status === 'matched_auto' ? '支付凭证匹配成功，会员已自动开通。' : '支付凭证已提交，等待系统匹配或后台处理。'
+          'sync.payment_claim_pending_notice',
+          '支付凭证已提交，等待管理员审核。'
         );
         state.syncPaymentClaimNotice.value = resolveSyncEntry(notice).text;
         await refreshSyncSession(true);
         setSyncNotice(notice, 'info');
         pushSyncToast(
-          status === 'matched_auto' ? 'success' : 'info',
-          status === 'matched_auto' ? 'sync.payment_claim_matched_title' : 'sync.payment_claim_pending_title',
-          status === 'matched_auto' ? 'sync.payment_claim_matched_notice' : 'sync.payment_claim_pending_notice',
-          status === 'matched_auto' ? '支付匹配成功' : '支付凭证已提交',
+          'info',
+          'sync.payment_claim_pending_title',
+          'sync.payment_claim_pending_notice',
+          '支付凭证已提交',
           resolveSyncEntry(notice).text,
-          `sync-payment-claim:${status}:${result && result.claim ? result.claim.id : 'unknown'}`
+          `sync-payment-claim:pending:${result && result.claimId ? result.claimId : 'unknown'}`
         );
       } catch (error) {
+        const errorCode = extractSyncErrorCode(error && error.payload ? error.payload.error : error && error.message);
         const result = handleSyncRequestFailure(error, 'sync.error_sync_failed', '同步失败，请稍后重试。');
-        state.syncPaymentClaimError.value = state.syncError.value;
-        pushSyncToast('danger', 'sync.payment_claim_failed_title', 'sync.payment_claim_failed_summary', '支付凭证提交失败', state.syncError.value || '支付凭证提交失败。', `sync-payment-claim-error:${result || 'error'}`);
+        if (errorCode === 'email_verification_required') {
+          state.syncPaymentClaimError.value = state.syncError.value;
+          pushSyncToast('warning', 'sync.email_verification_overdue_title', 'sync.error_email_verification_required', '邮箱验证已超期', state.syncError.value || '邮箱验证已超期，请先完成邮箱验证。', `sync-payment-claim:restricted:${result || 'error'}`);
+        } else {
+          state.syncPaymentClaimError.value = state.syncError.value;
+          pushSyncToast('danger', 'sync.payment_claim_failed_title', 'sync.payment_claim_failed_summary', '支付凭证提交失败', state.syncError.value || '支付凭证提交失败。', `sync-payment-claim-error:${result || 'error'}`);
+        }
       } finally {
         state.syncBusy.value = false;
       }
@@ -1906,9 +2004,9 @@
       state.syncBusy.value = true;
       let requestError = null;
       try {
-        await requestJson("send-reset-code", {
+        await requestJson("password/send-reset", {
           method: "POST",
-          body: JSON.stringify({ account }),
+          body: JSON.stringify({ email: account }),
         });
         const notice = createSyncTextEntry(
           "sync.reset_code_sent_notice",
@@ -1939,6 +2037,7 @@
         clearSyncConflictUiState();
         closeSyncPasswordModal();
         clearPasswordChangeForm();
+        clearPaymentClaimForm();
         syncModalCleanupTimer = null;
       }, 320);
     };
@@ -1950,6 +2049,7 @@
       clearSyncConflictState();
       closeSyncPasswordModal();
       clearPasswordChangeForm();
+      clearPaymentClaimForm();
     };
 
     const handleSyncUnauthorized = (options) => {
@@ -2086,7 +2186,8 @@
     const maybeNotifyPlanStatus = (me, previousUser) => {
       if (!me || typeof me !== "object") return;
       const planTier = String(me.plan_tier || "free");
-      const planExpiresAt = String(me.plan_expires_at || me.premium_until || me.premium_trial_until || "");
+      const planExpiresAtRaw = String(me.plan_expires_at || me.premium_until || me.premium_trial_until || "");
+      const planExpiresAt = formatClaimTime(planExpiresAtRaw) || planExpiresAtRaw;
       const expiringSoon = Boolean(me.plan_expiring_soon);
       const expired = Boolean(me.plan_expired);
       const autoSyncAllowed = Boolean(me.auto_sync_allowed);
@@ -2094,7 +2195,7 @@
       const previousPlanTier = String(previousUser && previousUser.plan_tier ? previousUser.plan_tier : "");
 
       if (expiringSoon && planExpiresAt) {
-        const expirySignature = `plan-expiring:${planTier}:${planExpiresAt}`;
+        const expirySignature = `plan-expiring:${planTier}:${planExpiresAtRaw}`;
         if (readPlanToastSignature() !== expirySignature) {
           writePlanToastSignature(expirySignature);
           pushSyncToast(
@@ -2114,7 +2215,7 @@
       }
 
       if (expired && previousPlanTier && previousPlanTier !== "free") {
-        const expiredSignature = `plan-expired:${planTier}:${planExpiresAt || "none"}`;
+        const expiredSignature = `plan-expired:${planTier}:${planExpiresAtRaw || "none"}`;
         if (readPlanToastSignature() !== expiredSignature) {
           writePlanToastSignature(expiredSignature);
           pushSyncToast(
@@ -2133,7 +2234,7 @@
       }
 
       if (autoSyncAllowed && !previousAutoSyncAllowed && !state.syncAutoSyncEnabled.value) {
-        const restoredSignature = `auto-sync-restored:${planTier}:${planExpiresAt || "none"}`;
+        const restoredSignature = `auto-sync-restored:${planTier}:${planExpiresAtRaw || "none"}`;
         if (readPlanToastSignature() !== restoredSignature) {
           writePlanToastSignature(restoredSignature);
           pushSyncToast(
@@ -2189,6 +2290,10 @@
         email_send_failed: {
           key: 'sync.error_email_send_failed',
           fallback: '邮件发送失败，请稍后重试。',
+        },
+        email_domain_unsupported: {
+          key: 'sync.error_email_domain_unsupported',
+          fallback: '该邮箱域名无法接收邮件，请更换其他邮箱。',
         },
         email_taken: {
           key: 'sync.error_email_taken',
@@ -2343,7 +2448,7 @@
       state.syncSessionChecking.value = true;
       const currentRequest = (async () => {
         try {
-          const me = await requestJson("me");
+          const me = await requestJson("auth/me");
           const previousUser = state.syncUser.value;
           state.syncUserPaymentClaims.value = me && Array.isArray(me.payment_claims) ? me.payment_claims : [];
           state.syncUser.value = me;
@@ -2835,14 +2940,14 @@
               username,
               email,
               password,
-              "cf-turnstile-response": String(state.syncTurnstileToken.value || ""),
+              turnstileToken: String(state.syncTurnstileToken.value || ""),
             }
           : {
-              account: loginAccount,
+              login: loginAccount,
               password,
-              "cf-turnstile-response": String(state.syncTurnstileToken.value || ""),
+              turnstileToken: String(state.syncTurnstileToken.value || ""),
             };
-        const authResult = await requestJson(isRegister ? "register" : "login", {
+        const authResult = await requestJson(isRegister ? "auth/register" : "auth/login", {
           method: "POST",
           body: JSON.stringify(authPayload),
         });
@@ -2969,24 +3074,36 @@
 
       state.syncBusy.value = true;
       try {
-        const payload = useResetCode
-          ? {
-              reset_code: resetCode,
-              new_password: newPassword,
-              confirm_password: confirmPassword,
-            }
-          : {
-              current_password: currentPassword,
-              new_password: newPassword,
-              confirm_password: confirmPassword,
-            };
-        if (useResetCode && !authenticated) {
-          payload.account = account;
+        let response;
+        if (useResetCode && authenticated) {
+          // Authenticated user with reset code → use /password/change (auth required)
+          response = await requestJson("password/change", {
+            method: "POST",
+            body: JSON.stringify({
+              resetCode: resetCode,
+              newPassword: newPassword,
+            }),
+          });
+        } else if (useResetCode) {
+          // Unauthenticated user with reset code → use /password/reset (public)
+          response = await requestJson("password/reset", {
+            method: "POST",
+            body: JSON.stringify({
+              email: account,
+              code: resetCode,
+              newPassword: newPassword,
+            }),
+          });
+        } else {
+          // Authenticated user with current password → use /password/change
+          response = await requestJson("password/change", {
+            method: "POST",
+            body: JSON.stringify({
+              currentPassword: currentPassword,
+              newPassword: newPassword,
+            }),
+          });
         }
-        const response = await requestJson("change-password", {
-          method: "POST",
-          body: JSON.stringify(payload),
-        });
         clearPasswordChangeForm();
         if (useResetCode) {
           state.syncAuthMode.value = "login";
@@ -3057,7 +3174,7 @@
       clearAutoSyncTimer();
       state.syncBusy.value = true;
       try {
-        await requestJson("logout", {
+        await requestJson("auth/logout", {
           method: "POST",
           body: JSON.stringify({}),
         });
@@ -3131,6 +3248,8 @@
     state.syncResetCodeRequestCooldownSeconds = ref(0);
     state.syncPaymentChannelInput = ref('');
     state.syncPaymentReferenceInput = ref('');
+    state.syncPaymentMerchantOrderInput = ref('');
+    state.syncPaymentPaidTimeInput = ref('');
     state.syncPaymentClaimError = ref('');
     state.syncPaymentClaimNotice = ref('');
     state.syncTurnstileRef = ref(null);
@@ -3244,6 +3363,7 @@
     state.submitSyncEmailAction = submitSyncEmailAction;
     state.sendSyncVerificationCode = sendSyncVerificationCode;
     state.submitPaymentClaim = submitPaymentClaim;
+    state.formatClaimTime = formatClaimTime;
     state.logoutSync = logoutSync;
     state.performManualSync = performManualSync;
     state.resolveSyncConflictUseServer = resolveSyncConflictUseServer;
@@ -3468,6 +3588,18 @@
       clearSyncTurnstileMessage();
       destroySyncTurnstileWidget();
       void mountSyncTurnstile();
+    });
+
+    watch(state.syncPaymentChannelInput, (channel, prev) => {
+      const next = String(channel || '');
+      const previous = String(prev || '');
+      if (previous === next) return;
+      if (!previous) return;
+      state.syncPaymentReferenceInput.value = '';
+      state.syncPaymentMerchantOrderInput.value = '';
+      state.syncPaymentPaidTimeInput.value = '';
+      state.syncPaymentClaimError.value = '';
+      state.syncPaymentClaimNotice.value = '';
     });
 
   };

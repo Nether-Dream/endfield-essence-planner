@@ -614,7 +614,7 @@
                     :disabled="syncBusy || syncSessionChecking || syncFrontendBlocked || syncTurnstileLoading || !syncTurnstileReadyToSubmit"
                     @click="submitSyncAuth"
                   >
-                    {{ syncAuthMode === 'register' ? t("sync.register_action") : t("sync.login_action") }}
+                    {{ syncBusy ? (syncAuthMode === 'register' ? t("sync.registering_action") : t("sync.logging_in_action")) : (syncAuthMode === 'register' ? t("sync.register_action") : t("sync.login_action")) }}
                   </button>
                   <button
                     class="ghost-button"
@@ -686,16 +686,16 @@
                         {{ t("sync.error_email_verification_required") }}
                       </div>
                       <div class="secondary-hint sync-status-warning sync-status-warning-soft" v-else-if="syncUser && syncUser.plan_expiring_soon">
-                        {{ t("sync.plan_expiring_highlight_notice", { time: syncUser.plan_expires_at || '-', plan: syncUser.plan_tier === 'trial' ? t('sync.rights_plan_trial_title') : t('sync.rights_plan_member_title') }) }}
+                        {{ t("sync.plan_expiring_highlight_notice", { time: formatClaimTime(syncUser.plan_expires_at), plan: syncUser.plan_tier === 'trial' ? t('sync.rights_plan_trial_title') : t('sync.rights_plan_member_title') }) }}
                       </div>
                       <div class="secondary-hint" v-else-if="syncUser && syncUser.email_verified === false">
-                        {{ t("sync.email_unverified_hint", { time: syncUser.email_verification_deadline || '-' }) }}
+                        {{ t("sync.email_unverified_hint", { time: formatClaimTime(syncUser.email_verification_deadline) }) }}
                       </div>
                       <div class="secondary-hint" v-if="syncUser && syncUser.plan_tier === 'trial'">
-                        {{ t("sync.trial_active_hint", { time: syncUser.plan_expires_at || syncUser.premium_trial_until || '-' }) }}
+                        {{ t("sync.trial_active_hint", { time: formatClaimTime(syncUser.plan_expires_at || syncUser.premium_trial_until) }) }}
                       </div>
                       <div class="secondary-hint" v-else-if="syncUser && syncUser.plan_tier === 'premium'">
-                        {{ t("sync.membership_active_hint", { time: syncUser.plan_expires_at || syncUser.premium_until || '-' }) }}
+                        {{ t("sync.membership_active_hint", { time: formatClaimTime(syncUser.plan_expires_at || syncUser.premium_until) }) }}
                       </div>
                       <div class="secondary-hint" v-else-if="syncUser && syncUser.manual_sync_allowed">
                         {{ t("sync.membership_required_hint") }}
@@ -728,6 +728,7 @@
                   </button>
                   <button
                     class="ghost-button"
+                    :class="{ 'email-unverified-highlight': syncUser && syncUser.email_verified === false }"
                     :disabled="syncBusy || syncFrontendBlocked"
                     @click="openSyncEmailModal"
                   >
@@ -842,10 +843,11 @@
                       <option value="wechat">{{ t("sync.payment.wechat") }}</option>
                     </select>
                   </div>
+                  <template v-if="syncPaymentChannelInput">
                   <div class="sync-auth-field">
                     <label class="secondary-label">{{ t("sync.payment_reference_label") }}</label>
                     <input
-                      v-model.trim="syncPaymentReferenceInput"
+                      v-model="syncPaymentReferenceInput"
                       class="secondary-input"
                       type="text"
                       :placeholder="t('sync.payment_reference_hint')"
@@ -853,26 +855,50 @@
                       @keydown.enter="submitPaymentClaim"
                     />
                   </div>
+                  <div v-if="syncPaymentChannelInput === 'alipay'" class="sync-auth-field">
+                    <label class="secondary-label">{{ t("sync.payment_merchant_order_label") }}</label>
+                    <input
+                      v-model="syncPaymentMerchantOrderInput"
+                      class="secondary-input"
+                      type="text"
+                      :placeholder="t('sync.payment_merchant_order_hint')"
+                      :disabled="syncBusy || syncFrontendBlocked"
+                      @keydown.enter="submitPaymentClaim"
+                    />
+                  </div>
+                  <div class="sync-auth-field">
+                    <label class="secondary-label">{{ t("sync.payment_paid_time_label") }}</label>
+                    <input
+                      v-model="syncPaymentPaidTimeInput"
+                      class="secondary-input"
+                      type="datetime-local"
+                      :placeholder="t('sync.payment_paid_time_hint')"
+                      :disabled="syncBusy || syncFrontendBlocked"
+                    />
+                  </div>
                   <div class="secondary-hint">{{ t("sync.payment_claim_review_hint") }}</div>
                   <div class="secondary-hint">{{ t("sync.payment_claim_privacy_hint") }}</div>
                   <div class="secondary-actions">
                     <button
                       class="about-button"
-                      :disabled="syncBusy || syncFrontendBlocked || !syncPaymentChannelInput"
+                      :disabled="syncBusy || syncFrontendBlocked || !syncPaymentReferenceInput || (syncPaymentChannelInput === 'alipay' && !syncPaymentMerchantOrderInput)"
                       @click="submitPaymentClaim"
                     >
                       {{ t("sync.submit_payment_claim_action") }}
                     </button>
-                    <span v-if="!syncPaymentChannelInput" class="secondary-hint">{{ t("sync.payment_channel_required_hint") }}</span>
+                    <span v-if="!syncPaymentReferenceInput" class="secondary-hint">{{ t("sync.payment_reference_required_hint") }}</span>
+                    <span v-else-if="syncPaymentChannelInput === 'alipay' && !syncPaymentMerchantOrderInput" class="secondary-hint">{{ t("sync.error_merchant_order_required") }}</span>
                   </div>
+                  </template>
                   <div v-if="syncUserPaymentClaims && syncUserPaymentClaims.length" class="sync-claim-history">
                     <div class="secondary-label">{{ t("sync.payment_claim_history_title") }}</div>
                     <div class="sync-status-list">
                       <div v-for="claim in syncUserPaymentClaims" :key="claim.id" class="sync-summary-card sync-claim-history-item">
-                        <div class="secondary-label">#{{ claim.id }} · {{ claim.channel }} · {{ claim.external_reference }}</div>
-                        <div class="secondary-hint">{{ t("sync.payment_claim_status_label") }}：{{ claim.status_label || claim.status }}</div>
-                        <div class="secondary-hint">{{ t("sync.payment_claim_submitted_at_label") }}：{{ claim.submitted_at || '-' }}</div>
-                        <div v-if="claim.expires_at" class="secondary-hint">{{ t("sync.payment_claim_expires_at_label") }}：{{ claim.expires_at }}</div>
+                        <div class="secondary-label">#{{ claim.id }} · {{ t("sync.payment." + claim.channel, claim.channel) }} · {{ claim.external_reference }}</div>
+                        <div v-if="claim.merchant_order_no" class="secondary-hint">{{ t("sync.payment_merchant_order_label") }}：{{ claim.merchant_order_no }}</div>
+                        <div class="secondary-hint">{{ t("sync.payment_claim_status_label") }}：{{ t("sync.payment.status." + claim.status, claim.status) }}</div>
+                        <div class="secondary-hint">{{ t("sync.payment_claim_submitted_at_label") }}：{{ formatClaimTime(claim.submitted_at) }}</div>
+                        <div v-if="claim.expires_at" class="secondary-hint">{{ t("sync.payment_claim_expires_at_label") }}：{{ formatClaimTime(claim.expires_at) }}</div>
                       </div>
                     </div>
                   </div>

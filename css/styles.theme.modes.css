@@ -773,6 +773,18 @@ html[data-bg-display="off"][data-theme="light"] body::after {
   color: #1f3957;
 }
 
+[data-theme="light"] .ghost-button.email-unverified-highlight {
+  border-color: rgba(var(--color-warning-rgb), var(--alpha-48));
+  background: rgba(var(--color-warning-rgb), var(--alpha-14));
+  color: #8a5200;
+}
+
+[data-theme="light"] .ghost-button.email-unverified-highlight:hover {
+  border-color: rgba(var(--color-warning-rgb), var(--alpha-68));
+  background: rgba(var(--color-warning-rgb), var(--alpha-22));
+  color: #7a4700;
+}
+
 [data-theme="light"] .domain-actions .ghost-button:hover {
   border-color: rgba(var(--color-black-rgb), var(--alpha-34));
   background: rgba(244, 249, 255, var(--alpha-96));

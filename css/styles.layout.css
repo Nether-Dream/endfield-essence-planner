@@ -1083,6 +1083,30 @@
         margin: 0;
       }
 
+      .ghost-button.email-unverified-highlight {
+        border-color: rgba(var(--color-warning-rgb), var(--alpha-52));
+        background: rgba(var(--color-warning-rgb), var(--alpha-16));
+        color: #ffe5bf;
+        font-weight: 600;
+        animation: email-unverified-pulse 2.4s ease-in-out infinite;
+      }
+
+      .ghost-button.email-unverified-highlight:hover {
+        border-color: rgba(var(--color-warning-rgb), var(--alpha-72));
+        background: rgba(var(--color-warning-rgb), var(--alpha-24));
+        color: #fff0d4;
+      }
+
+      .ghost-button.email-unverified-highlight:disabled {
+        animation: none;
+        filter: grayscale(0.4);
+      }
+
+      @keyframes email-unverified-pulse {
+        0%, 100% { box-shadow: 0 0 0 0 rgba(var(--color-warning-rgb), var(--alpha-00)); }
+        50% { box-shadow: 0 0 0 4px rgba(var(--color-warning-rgb), var(--alpha-18)); }
+      }
+
       .sync-password-panel {
         display: grid;
         gap: 8px;
