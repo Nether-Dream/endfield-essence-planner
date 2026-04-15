@@ -338,6 +338,11 @@
           : useCurrentFallback
             ? cloneJson(getRefValue(state.filterS3, []), [])
             : [],
+        selectedRegions: Array.isArray(source.selectedRegions)
+          ? source.selectedRegions.slice()
+          : useCurrentFallback
+            ? cloneJson(getRefValue(state.selectedRegions, []), [])
+            : [],
         equipRefiningSelectedName:
           typeof source.equipRefiningSelectedName === "string"
             ? source.equipRefiningSelectedName
@@ -1757,6 +1762,7 @@
       state.filterS1.value = comparable.workspace.filterS1 || [];
       state.filterS2.value = comparable.workspace.filterS2 || [];
       state.filterS3.value = comparable.workspace.filterS3 || [];
+      state.selectedRegions.value = comparable.workspace.selectedRegions || [];
       state.weaponAttrOverrides.value = comparable.workspace.weaponAttrOverrides || {};
       state.showWeaponAttrs.value = Boolean(comparable.workspace.showWeaponAttrs);
       state.showWeaponOwnership.value = Boolean(comparable.workspace.showWeaponOwnership);

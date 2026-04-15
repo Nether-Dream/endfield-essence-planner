@@ -775,12 +775,6 @@
           ? ["unowned", "essenceOwned", "fourStar"].filter((key) => hiddenReasonSet.has(key))
           : [];
       const hiddenReasons = formatHiddenReasons(hiddenReasonKeys);
-      const isHiddenOnly = affectsHidden && !isEmpty && effectiveCount === 0;
-      const disabledHintLabel = isEmpty
-        ? translate("nav.none")
-        : isHiddenOnly
-          ? translate("nav.hidden")
-          : translate("nav.none");
       const disabledHintTitle = isEmpty
         ? translate("nav.no_weapons_under_current_filters")
         : hiddenReasons
@@ -793,7 +787,6 @@
         effectiveCount,
         isEmpty,
         hiddenReasons,
-        disabledHintLabel,
         disabledHintTitle,
         isDisabled: count === 0,
       };
@@ -919,6 +912,27 @@
       state.filterS1.value = [];
       state.filterS2.value = [];
       state.filterS3.value = [];
+    };
+
+    const isRegionSelected = (region) => {
+      const selected = state.selectedRegions.value;
+      if (!selected || !selected.length) return true;
+      return selected.includes(region);
+    };
+
+    const toggleRegionFilter = (region) => {
+      const current = state.selectedRegions.value || [];
+      const regionOptions = state.regionOptions.value || [];
+      if (!current.length) {
+        const next = regionOptions.filter((r) => r !== region);
+        state.selectedRegions.value = next.length === regionOptions.length ? [] : next;
+      } else if (current.includes(region)) {
+        const next = current.filter((r) => r !== region);
+        state.selectedRegions.value = next.length === 0 ? [] : next;
+      } else {
+        const next = [...current, region];
+        state.selectedRegions.value = next.length === regionOptions.length ? [] : next;
+      }
     };
 
     const hasAttributeFilters = computed(
@@ -1316,6 +1330,8 @@
     state.toggleFilterValue = toggleFilterValue;
     state.clearAttributeFilters = clearAttributeFilters;
     state.hasAttributeFilters = hasAttributeFilters;
+    state.isRegionSelected = isRegionSelected;
+    state.toggleRegionFilter = toggleRegionFilter;
     state.filteredWeapons = filteredWeapons;
     state.visibleFilteredWeapons = visibleFilteredWeapons;
     state.hiddenInSelectorSummary = hiddenInSelectorSummary;

@@ -1699,6 +1699,8 @@ return { view: "planner" };
         toggleFilterValue: state.toggleFilterValue,
         clearAttributeFilters: state.clearAttributeFilters,
         hasAttributeFilters: state.hasAttributeFilters,
+        isRegionSelected: state.isRegionSelected,
+        toggleRegionFilter: state.toggleRegionFilter,
         filteredWeapons: state.filteredWeapons,
         visibleFilteredWeapons: state.visibleFilteredWeapons,
         hiddenInSelectorSummary: state.hiddenInSelectorSummary,

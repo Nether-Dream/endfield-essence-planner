@@ -473,6 +473,7 @@
           if (restored.filterS1) state.filterS1.value = restored.filterS1;
           if (restored.filterS2) state.filterS2.value = restored.filterS2;
           if (restored.filterS3) state.filterS3.value = restored.filterS3;
+          if (restored.selectedRegions) state.selectedRegions.value = restored.selectedRegions;
           if (
             typeof restored.equipRefiningSelectedName === "string" &&
             state.equipRefiningSelectedName
@@ -652,6 +653,7 @@
         filterS1: state.filterS1.value,
         filterS2: state.filterS2.value,
         filterS3: state.filterS3.value,
+        selectedRegions: state.selectedRegions.value,
         equipRefiningSelectedName: state.equipRefiningSelectedName
           ? state.equipRefiningSelectedName.value
           : "",

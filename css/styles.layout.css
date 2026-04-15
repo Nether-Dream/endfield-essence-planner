@@ -563,7 +563,6 @@
 
       .lang-button:hover {
         border-color: rgba(var(--color-white-rgb), var(--alpha-32));
-        transform: translateY(-1px);
       }
 
       @media (max-width: 1024px) {
@@ -1525,7 +1524,6 @@
 
       .about-button:hover {
         border-color: rgba(var(--color-white-rgb), var(--alpha-35));
-        transform: translateY(-1px);
       }
 
       .ai-notice {
@@ -3123,7 +3121,6 @@
       .detail-tab:hover {
         color: var(--text);
         border-color: rgba(var(--color-white-rgb), var(--alpha-25));
-        transform: translateY(-1px);
         box-shadow: 0 6px 16px rgba(var(--color-black-rgb), var(--alpha-18));
       }
 

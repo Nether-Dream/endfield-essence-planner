@@ -570,23 +570,14 @@
       if (!recommendationContext.selectedWeapons.length) return "";
       if (!recommendationContext.targets.length) return "filteredOut";
       if (recommendationDataIssue.value) return "noScheme";
+      if (!recommendations.value.length) return "noScheme";
+      const selectedRegions = state.selectedRegions.value || [];
+      if (!selectedRegions.length) return "";
+      const hasVisibleRegionScheme = recommendations.value.some((scheme) =>
+        selectedRegions.includes(scheme.dungeonRegion)
+      );
+      if (!hasVisibleRegionScheme) return "regionFilteredOut";
       return "";
-    });
-
-    const coverageSummary = computed(() => {
-      const schemes = recommendations.value;
-      if (!schemes.length) return null;
-      const best = schemes[0];
-      const bestMatchCount = getSelectedMatchCountForSort(best);
-      const totalSelected =
-        Number.isFinite(best.targetCount) && best.targetCount > 0 ? best.targetCount : 0;
-      if (!totalSelected) return null;
-      return {
-        totalSelected,
-        bestMatchCount,
-        missingNames: best.selectedMissingNames || [],
-        hasGap: bestMatchCount < totalSelected,
-      };
     });
 
     const primaryRecommendations = computed(() => {
@@ -682,7 +673,6 @@
     state.recommendations = recommendations;
     state.recommendationDataIssue = recommendationDataIssue;
     state.recommendationEmptyReason = recommendationEmptyReason;
-    state.coverageSummary = coverageSummary;
     state.primaryRecommendations = primaryRecommendations;
     state.extraRecommendations = extraRecommendations;
     state.visibleRecommendations = visibleRecommendations;

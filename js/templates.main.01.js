@@ -458,9 +458,6 @@
                   "
                 >
                   <span>{{ formatS1(option.value) }}</span>
-                  <span v-if="option.isDisabled && !filterS1.includes(option.value)" class="chip-meta">
-                    {{ option.disabledHintLabel }}
-                  </span>
                 </button>
               </div>
             </div>
@@ -487,9 +484,6 @@
                   "
                 >
                   <span>{{ tTerm("s2", option.value) }}</span>
-                  <span v-if="option.isDisabled && !filterS2.includes(option.value)" class="chip-meta">
-                    {{ option.disabledHintLabel }}
-                  </span>
                 </button>
               </div>
             </div>
@@ -516,9 +510,6 @@
                   "
                 >
                   <span>{{ tTerm("s3", option.value) }}</span>
-                  <span v-if="option.isDisabled && !filterS3.includes(option.value)" class="chip-meta">
-                    {{ option.disabledHintLabel }}
-                  </span>
                 </button>
               </div>
               <div class="filter-hint">{{ t("error.gray_attributes_mean_no_weapons_under_current_filters") }}</div>
@@ -896,12 +887,31 @@
             </div>
           </div>
 
+          <div v-if="selectedCount && regionOptions.length > 1" class="region-filter-bar">
+            <span class="region-filter-label">{{ t("filter.region_filter") }}</span>
+            <div class="region-filter-chips">
+              <button
+                v-for="region in regionOptions"
+                :key="'region-filter-' + region"
+                class="filter-chip"
+                :class="{ 'is-active': isRegionSelected(region) }"
+                @click="toggleRegionFilter(region)"
+              >
+                {{ tTerm("dungeon", region) }}
+              </button>
+            </div>
+          </div>
+
           <div v-if="!selectedCount" class="empty">
             {{ t("nav.select_at_least_one_weapon_and_the_system_will_recommend") }}
           </div>
 
           <div v-else-if="recommendationEmptyReason === 'filteredOut'" class="empty">
             {{ t("nav.item") }}
+          </div>
+
+          <div v-else-if="recommendationEmptyReason === 'regionFilteredOut'" class="empty">
+            {{ t("plan.region_filter_uncovered_weapons_title") }}
           </div>
 
           <div v-else-if="recommendationEmptyReason === 'noScheme'" class="recommendations">

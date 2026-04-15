@@ -10,3 +10,6 @@ pic
 .tmp
 ldy/
 .codebuddy
+.agents
+.shared
+references

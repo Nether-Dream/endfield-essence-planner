@@ -261,6 +261,7 @@
     state.filterS1 = ref([]);
     state.filterS2 = ref([]);
     state.filterS3 = ref([]);
+    state.selectedRegions = ref([]);
 
     state.tutorialWeaponTarget = ref(null);
     state.tutorialSchemeTarget = ref(null);
