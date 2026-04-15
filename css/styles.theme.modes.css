@@ -408,6 +408,15 @@ html[data-bg-display="off"][data-theme="light"] body::after {
   border-bottom-color: rgba(var(--color-black-rgb), var(--alpha-16));
 }
 
+[data-theme="light"] .weapon-grid-ownership-row .exclude-checkbox-label {
+  color: #61758f;
+  background: rgba(var(--color-white-rgb), var(--alpha-52));
+}
+
+[data-theme="light"] .weapon-grid-ownership-row .exclude-checkbox-label:hover {
+  background: rgba(var(--color-white-rgb), var(--alpha-82));
+}
+
 [data-theme="light"] .plan-config-hint-dot {
   border-color: rgba(225, 78, 78, var(--alpha-68));
   background: linear-gradient(135deg, #ff866d, #e14e4e);

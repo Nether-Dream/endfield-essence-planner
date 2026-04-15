@@ -16,57 +16,38 @@
           <span>{{ t("plan_config.plan_recommendation_settings") }}</span>
         </button>
         <div v-if="showPlanConfig" class="plan-config-panel">
-          <section class="plan-config-section">
-            <button
-              type="button"
-              class="plan-config-section-header"
-              :aria-expanded="!isPlanConfigSectionCollapsed('transfer')"
-              @click="togglePlanConfigSectionCollapsed('transfer')"
-            >
-              <div class="plan-config-section-title">
+          <section class="plan-config-section plan-config-section-static">
+            <div class="plan-config-section-body plan-config-transfer">
+              <div class="plan-config-section-title plan-config-section-title-static">
                 <span class="secondary-label">{{ t("plan_config.marks_import_export") }}</span>
               </div>
-              <span
-                class="plan-config-section-chevron"
-                :class="{ 'is-open': !isPlanConfigSectionCollapsed('transfer') }"
-                aria-hidden="true"
-              >
-                &gt;
-              </span>
-            </button>
-            <transition name="plan-config-collapse">
-              <div
-                v-show="!isPlanConfigSectionCollapsed('transfer')"
-                class="plan-config-section-body plan-config-transfer"
-              >
-                <div class="secondary-actions">
-                  <button class="ghost-button" type="button" @click="exportWeaponMarks">
-                    {{ t("plan_config.marks_export") }}
-                  </button>
-                  <button class="ghost-button" type="button" @click="triggerMarksImport">
-                    {{ t("plan_config.marks_import") }}
-                  </button>
-                  <input
-                    ref="marksImportInput"
-                    class="marks-import-input"
-                    type="file"
-                    accept="application/json,.json"
-                    tabindex="-1"
-                    aria-hidden="true"
-                    @change="handleMarksImportFile"
-                  />
-                </div>
-                <div v-if="marksImportFileName" class="secondary-hint secondary-file">
-                  {{ t("plan_config.marks_import_selected_file", { file: marksImportFileName }) }}
-                </div>
-                <div v-if="marksImportSummary" class="secondary-hint">
-                  {{ t("plan_config.marks_import_pending", { count: marksImportSummary.total }) }}
-                </div>
-                <div v-if="marksImportError" class="secondary-hint secondary-warning">
-                  {{ marksImportError }}
-                </div>
+              <div class="secondary-actions">
+                <button class="ghost-button" type="button" @click="exportWeaponMarks">
+                  {{ t("plan_config.export_weapon_marks") }}
+                </button>
+                <button class="ghost-button" type="button" @click="triggerMarksImport">
+                  {{ t("plan_config.import_weapon_marks") }}
+                </button>
+                <input
+                  ref="marksImportInput"
+                  class="marks-import-input"
+                  type="file"
+                  accept="application/json,.json"
+                  tabindex="-1"
+                  aria-hidden="true"
+                  @change="handleMarksImportFile"
+                />
               </div>
-            </transition>
+              <div v-if="marksImportFileName" class="secondary-hint secondary-file">
+                {{ t("plan_config.marks_import_selected_file", { file: marksImportFileName }) }}
+              </div>
+              <div v-if="marksImportSummary" class="secondary-hint">
+                {{ t("plan_config.marks_import_pending", { count: marksImportSummary.total }) }}
+              </div>
+              <div v-if="marksImportError" class="secondary-hint secondary-warning">
+                {{ marksImportError }}
+              </div>
+            </div>
           </section>
           <section class="plan-config-section">
             <button
@@ -357,25 +338,38 @@
                     </div>
                   </div>
                   <div class="plan-config-rule-row">
-                    <div class="plan-config-rule-label">{{ t("plan_config.show_weapon_ownership_tags") }}</div>
+                    <div class="plan-config-rule-label">{{ t("plan_config.quick_edit_ownership_state") }}</div>
                     <div class="plan-config-rule-col">
                       <button
                         class="ghost-button toggle-button switch-toggle switch-compact"
-                        :class="{ 'is-active': showWeaponOwnership }"
+                        :class="{ 'is-active': showWeaponOwnershipInList }"
                         :title="t('plan_config.when_enabled_weapon_list_shows_ownership_tags')"
-                        :aria-label="t('plan_config.show_weapon_ownership_tags')"
+                        :aria-label="t('plan_config.quick_edit_ownership_state') + ' - ' + t('plan_config.rule_scope_weapon_list')"
                         role="switch"
-                        :aria-checked="showWeaponOwnership ? 'true' : 'false'"
-                        @click="toggleShowWeaponOwnership"
+                        :aria-checked="showWeaponOwnershipInList ? 'true' : 'false'"
+                        @click="toggleShowWeaponOwnershipInList"
                       >
-                        <span class="switch-label">{{ t("plan_config.show_weapon_ownership_tags") }}</span>
-                        <span class="switch-track" :class="{ on: showWeaponOwnership }" aria-hidden="true">
+                        <span class="switch-label">{{ t("plan_config.quick_edit_ownership_state") }}</span>
+                        <span class="switch-track" :class="{ on: showWeaponOwnershipInList }" aria-hidden="true">
                           <span class="switch-thumb"></span>
                         </span>
                       </button>
                     </div>
                     <div class="plan-config-rule-col">
-                      <span class="plan-config-rule-empty">-</span>
+                      <button
+                        class="ghost-button toggle-button switch-toggle switch-compact"
+                        :class="{ 'is-active': showWeaponOwnershipInPlans }"
+                        :title="t('plan_config.when_enabled_plan_list_shows_ownership_tags')"
+                        :aria-label="t('plan_config.quick_edit_ownership_state') + ' - ' + t('plan_config.rule_scope_plan_recommendations')"
+                        role="switch"
+                        :aria-checked="showWeaponOwnershipInPlans ? 'true' : 'false'"
+                        @click="toggleShowWeaponOwnershipInPlans"
+                      >
+                        <span class="switch-label">{{ t("plan_config.quick_edit_ownership_state") }}</span>
+                        <span class="switch-track" :class="{ on: showWeaponOwnershipInPlans }" aria-hidden="true">
+                          <span class="switch-thumb"></span>
+                        </span>
+                      </button>
                     </div>
                   </div>
                   <div class="plan-config-rule-row">
@@ -408,22 +402,23 @@
             <button
               type="button"
               class="plan-config-section-header"
-              :aria-expanded="!isPlanConfigSectionCollapsed('regionPriority')"
-              @click="togglePlanConfigSectionCollapsed('regionPriority')"
+              :aria-expanded="!isPlanConfigSectionCollapsed('priorityStrategies')"
+              @click="togglePlanConfigSectionCollapsed('priorityStrategies')"
             >
               <div class="plan-config-section-title">
-                <span class="secondary-label">{{ t("filter.region_priority") }}</span>
+                <span class="secondary-label">{{ t("plan_config.priority_and_strategies") }}</span>
               </div>
               <span
                 class="plan-config-section-chevron"
-                :class="{ 'is-open': !isPlanConfigSectionCollapsed('regionPriority') }"
+                :class="{ 'is-open': !isPlanConfigSectionCollapsed('priorityStrategies') }"
                 aria-hidden="true"
               >
                 &gt;
               </span>
             </button>
             <transition name="plan-config-collapse">
-              <div v-show="!isPlanConfigSectionCollapsed('regionPriority')" class="plan-config-section-body">
+              <div v-show="!isPlanConfigSectionCollapsed('priorityStrategies')" class="plan-config-section-body">
+                <div class="secondary-label plan-config-subtitle">{{ t("filter.region_priority") }}</div>
                 <div class="secondary-hint">{{ t("filter.priority_region_1_highest") }}</div>
                 <select class="secondary-select" v-model="recommendationConfig.preferredRegion1">
                   <option value="">{{ t("plan_config.not_set") }}</option>
@@ -443,29 +438,7 @@
                     {{ tTerm("dungeon", region) }}
                   </option>
                 </select>
-              </div>
-            </transition>
-          </section>
-          <section class="plan-config-section">
-            <button
-              type="button"
-              class="plan-config-section-header"
-              :aria-expanded="!isPlanConfigSectionCollapsed('regionPriorityMode')"
-              @click="togglePlanConfigSectionCollapsed('regionPriorityMode')"
-            >
-              <div class="plan-config-section-title">
-                <span class="secondary-label">{{ t("filter.region_priority_strategy") }}</span>
-              </div>
-              <span
-                class="plan-config-section-chevron"
-                :class="{ 'is-open': !isPlanConfigSectionCollapsed('regionPriorityMode') }"
-                aria-hidden="true"
-              >
-                &gt;
-              </span>
-            </button>
-            <transition name="plan-config-collapse">
-              <div v-show="!isPlanConfigSectionCollapsed('regionPriorityMode')" class="plan-config-section-body">
+                <div class="secondary-label plan-config-subtitle">{{ t("filter.region_priority_strategy") }}</div>
                 <select class="secondary-select" v-model="recommendationConfig.regionPriorityMode">
                   <option
                     v-for="mode in tRegionPriorityModeOptions"
@@ -485,29 +458,7 @@
                     <span class="priority-mode-name">{{ mode.label }}：</span>{{ mode.description }}
                   </div>
                 </div>
-              </div>
-            </transition>
-          </section>
-          <section class="plan-config-section">
-            <button
-              type="button"
-              class="plan-config-section-header"
-              :aria-expanded="!isPlanConfigSectionCollapsed('ownershipPriorityMode')"
-              @click="togglePlanConfigSectionCollapsed('ownershipPriorityMode')"
-            >
-              <div class="plan-config-section-title">
-                <span class="secondary-label">{{ t("filter.owned_weapon_priority_strategy") }}</span>
-              </div>
-              <span
-                class="plan-config-section-chevron"
-                :class="{ 'is-open': !isPlanConfigSectionCollapsed('ownershipPriorityMode') }"
-                aria-hidden="true"
-              >
-                &gt;
-              </span>
-            </button>
-            <transition name="plan-config-collapse">
-              <div v-show="!isPlanConfigSectionCollapsed('ownershipPriorityMode')" class="plan-config-section-body">
+                <div class="secondary-label plan-config-subtitle">{{ t("filter.owned_weapon_priority_strategy") }}</div>
                 <select class="secondary-select" v-model="recommendationConfig.ownershipPriorityMode">
                   <option
                     v-for="mode in tOwnershipPriorityModeOptions"
@@ -527,32 +478,10 @@
                     <span class="priority-mode-name">{{ mode.label }}：</span>{{ mode.description }}
                   </div>
                 </div>
-              </div>
-            </transition>
-          </section>
-          <section
-            class="plan-config-section"
-            v-if="recommendationConfig.regionPriorityMode === 'strict' && recommendationConfig.ownershipPriorityMode === 'strict'"
-          >
-            <button
-              type="button"
-              class="plan-config-section-header"
-              :aria-expanded="!isPlanConfigSectionCollapsed('strictPriorityOrder')"
-              @click="togglePlanConfigSectionCollapsed('strictPriorityOrder')"
-            >
-              <div class="plan-config-section-title">
-                <span class="secondary-label">{{ t("filter.strict_priority_order") }}</span>
-              </div>
-              <span
-                class="plan-config-section-chevron"
-                :class="{ 'is-open': !isPlanConfigSectionCollapsed('strictPriorityOrder') }"
-                aria-hidden="true"
-              >
-                &gt;
-              </span>
-            </button>
-            <transition name="plan-config-collapse">
-              <div v-show="!isPlanConfigSectionCollapsed('strictPriorityOrder')" class="plan-config-section-body">
+                <div
+                  v-if="recommendationConfig.regionPriorityMode === 'strict' && recommendationConfig.ownershipPriorityMode === 'strict'"
+                >
+                  <div class="secondary-label plan-config-subtitle">{{ t("filter.strict_priority_order") }}</div>
                 <select class="secondary-select" v-model="recommendationConfig.strictPriorityOrder">
                   <option
                     v-for="option in tStrictPriorityOrderOptions"
@@ -571,6 +500,7 @@
                   >
                     <span class="priority-mode-name">{{ option.label }}：</span>{{ option.description }}
                   </div>
+                </div>
                 </div>
               </div>
             </transition>

@@ -261,7 +261,7 @@
                       <div class="conflict-reason">
                         {{ t("plan.conflict_reason_reason", { reason: weapon.conflictReason }) }}
                       </div>
-                      <div class="weapon-exclude-row" @click.stop>
+                      <div v-if="showWeaponOwnershipInPlans" class="weapon-exclude-row" @click.stop>
                         <label class="exclude-checkbox-label">
                           <input
                             type="checkbox"
@@ -394,7 +394,7 @@
                       <span class="attr-label">{{ t("nav.skill_attributes") }}：</span>{{ tTerm("s3", weapon.s3) }}
                     </span>
                   </div>
-                  <div class="weapon-exclude-row" @click.stop>
+                  <div v-if="showWeaponOwnershipInPlans" class="weapon-exclude-row" @click.stop>
                     <label class="exclude-checkbox-label">
                       <input
                         type="checkbox"

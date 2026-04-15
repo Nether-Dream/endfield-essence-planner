@@ -882,8 +882,12 @@
       }
     };
 
-    const toggleShowWeaponOwnership = () => {
-      state.showWeaponOwnership.value = !state.showWeaponOwnership.value;
+    const toggleShowWeaponOwnershipInList = () => {
+      state.showWeaponOwnershipInList.value = !state.showWeaponOwnershipInList.value;
+    };
+
+    const toggleShowWeaponOwnershipInPlans = () => {
+      state.showWeaponOwnershipInPlans.value = !state.showWeaponOwnershipInPlans.value;
     };
 
     const toggleFilterPanel = () => {
@@ -1096,7 +1100,7 @@
         return;
       }
       const containerSelector = ".weapon-list";
-      const itemSelector = ".weapon-item";
+      const itemSelector = ".weapon-grid-entry";
       const grid = document.querySelector(containerSelector);
       if (!grid) {
         weaponGridVirtual.value = {
@@ -1324,7 +1328,8 @@
     state.isEssenceOwnedForPlanning = isEssenceOwnedForPlanning;
     state.toggleWeapon = toggleWeapon;
     state.toggleShowWeaponAttrs = toggleShowWeaponAttrs;
-    state.toggleShowWeaponOwnership = toggleShowWeaponOwnership;
+    state.toggleShowWeaponOwnershipInList = toggleShowWeaponOwnershipInList;
+    state.toggleShowWeaponOwnershipInPlans = toggleShowWeaponOwnershipInPlans;
     state.toggleFilterPanel = toggleFilterPanel;
     state.clearSelection = clearSelection;
     state.toggleFilterValue = toggleFilterValue;

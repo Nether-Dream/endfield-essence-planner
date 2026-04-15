@@ -258,6 +258,12 @@
       if (typeof raw.showWeaponOwnership === "boolean") {
         next.showWeaponOwnership = raw.showWeaponOwnership;
       }
+      if (typeof raw.showWeaponOwnershipInList === "boolean") {
+        next.showWeaponOwnershipInList = raw.showWeaponOwnershipInList;
+      }
+      if (typeof raw.showWeaponOwnershipInPlans === "boolean") {
+        next.showWeaponOwnershipInPlans = raw.showWeaponOwnershipInPlans;
+      }
       if (typeof raw.filterPanelManuallySet === "boolean") {
         next.filterPanelManuallySet = raw.filterPanelManuallySet;
       }

@@ -359,12 +359,22 @@
             : useCurrentFallback
               ? Boolean(getRefValue(state.showWeaponAttrs, false))
               : false,
-        showWeaponOwnership:
-          typeof source.showWeaponOwnership === "boolean"
-            ? source.showWeaponOwnership
-            : useCurrentFallback
-              ? Boolean(getRefValue(state.showWeaponOwnership, false))
-              : false,
+        showWeaponOwnershipInList:
+          typeof source.showWeaponOwnershipInList === "boolean"
+            ? source.showWeaponOwnershipInList
+            : typeof source.showWeaponOwnership === "boolean"
+              ? source.showWeaponOwnership
+              : useCurrentFallback
+                ? Boolean(getRefValue(state.showWeaponOwnershipInList, false))
+                : false,
+        showWeaponOwnershipInPlans:
+          typeof source.showWeaponOwnershipInPlans === "boolean"
+            ? source.showWeaponOwnershipInPlans
+            : typeof source.showWeaponOwnership === "boolean"
+              ? source.showWeaponOwnership
+              : useCurrentFallback
+                ? Boolean(getRefValue(state.showWeaponOwnershipInPlans, false))
+                : false,
         showAllSchemes:
           typeof source.showAllSchemes === "boolean"
             ? source.showAllSchemes
@@ -1765,7 +1775,12 @@
       state.selectedRegions.value = comparable.workspace.selectedRegions || [];
       state.weaponAttrOverrides.value = comparable.workspace.weaponAttrOverrides || {};
       state.showWeaponAttrs.value = Boolean(comparable.workspace.showWeaponAttrs);
-      state.showWeaponOwnership.value = Boolean(comparable.workspace.showWeaponOwnership);
+      state.showWeaponOwnershipInList.value = Boolean(
+        comparable.workspace.showWeaponOwnershipInList
+      );
+      state.showWeaponOwnershipInPlans.value = Boolean(
+        comparable.workspace.showWeaponOwnershipInPlans
+      );
       state.showAllSchemes.value = Boolean(comparable.workspace.showAllSchemes);
       if (state.equipRefiningSelectedName) {
         state.equipRefiningSelectedName.value = String(

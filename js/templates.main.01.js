@@ -354,8 +354,10 @@
                 :is-plan-config-section-collapsed="isPlanConfigSectionCollapsed"
                 :toggle-plan-config-section-collapsed="togglePlanConfigSectionCollapsed"
                 :show-weapon-attrs="showWeaponAttrs"
-                :show-weapon-ownership="showWeaponOwnership"
-                :toggle-show-weapon-ownership="toggleShowWeaponOwnership"
+                :show-weapon-ownership-in-list="showWeaponOwnershipInList"
+                :show-weapon-ownership-in-plans="showWeaponOwnershipInPlans"
+                :toggle-show-weapon-ownership-in-list="toggleShowWeaponOwnershipInList"
+                :toggle-show-weapon-ownership-in-plans="toggleShowWeaponOwnershipInPlans"
                 :export-weapon-marks="exportWeaponMarks"
                 :handle-marks-import-file="handleMarksImportFile"
                 :marks-import-file-name="marksImportFileName"
@@ -399,6 +401,9 @@
                 @click="toggleShowWeaponAttrs"
               >
                 {{ showWeaponAttrs ? t("nav.hide_attributes_ownership_notes") : t("nav.show_attributes_ownership_notes") }}
+              </button>
+              <button class="ghost-button" :class="{ 'is-active': showWeaponOwnershipInList }" @click="toggleShowWeaponOwnershipInList">
+                {{ t("plan_config.quick_edit_ownership_state") }}
               </button>
               <button class="ghost-button" @click="toggleFilterPanel">
                 {{ showFilterPanel ? t("nav.collapse_filters") : t("button.expand_filters") }}
@@ -555,8 +560,10 @@
             <div
               v-for="weapon in visibleFilteredWeapons"
               :key="weapon.name"
+              class="weapon-grid-entry"
+            >
+            <div
               class="weapon-item"
-              v-memo="[locale, localeRenderVersion, selectedNameSet.has(weapon.name), isWeaponOwned(weapon.name), isEssenceOwned(weapon.name), weaponUpBadgeMemoKey, selectorHiddenMemoKey, showWeaponOwnership]"
               :class="{
                 'is-selected': selectedNameSet.has(weapon.name),
                 'is-unowned': isUnowned(weapon.name),
@@ -611,20 +618,33 @@
                   {{ t("nav.hidden") }}
                 </div>
               </div>
-              <span
-                v-if="showWeaponOwnership"
-                class="weapon-ownership-badge"
-                :class="{
-                  'is-owned': isWeaponOwned(weapon.name),
-                  'is-unowned': isUnowned(weapon.name),
-                }"
-              >
-                {{ isWeaponOwned(weapon.name) ? t("badge.owned") : t("nav.not_owned") }}
-              </span>
               <div class="weapon-name">
                 <div class="weapon-title">
                   <span class="weapon-title-text">{{ tTerm("weapon", weapon.name) }}</span>
                 </div>
+              </div>
+            </div>
+              <div v-if="showWeaponOwnershipInList" class="weapon-grid-ownership-row" @click.stop>
+                <label class="exclude-checkbox-label compact">
+                  <input
+                    type="checkbox"
+                    class="exclude-checkbox"
+                    :checked="isWeaponOwned(weapon.name)"
+                    @click.stop
+                    @change.stop="toggleWeaponOwned(weapon)"
+                  />
+                  <span>{{ t("label.weapon") }}</span>
+                </label>
+                <label class="exclude-checkbox-label compact">
+                  <input
+                    type="checkbox"
+                    class="exclude-checkbox"
+                    :checked="isEssenceOwned(weapon.name)"
+                    @click.stop
+                    @change.stop="toggleEssenceOwned(weapon)"
+                  />
+                  <span>{{ t("label.essence") }}</span>
+                </label>
               </div>
             </div>
             <div
@@ -796,7 +816,7 @@
                   {{ tTerm("s3", weapon.s3) }}
                 </span>
               </div>
-              <div class="weapon-exclude-row" @click.stop>
+              <div v-if="showWeaponOwnershipInList" class="weapon-exclude-row" @click.stop>
                 <label class="exclude-checkbox-label">
                   <input
                     type="checkbox"
@@ -848,8 +868,10 @@
                 :is-plan-config-section-collapsed="isPlanConfigSectionCollapsed"
                 :toggle-plan-config-section-collapsed="togglePlanConfigSectionCollapsed"
                 :show-weapon-attrs="showWeaponAttrs"
-                :show-weapon-ownership="showWeaponOwnership"
-                :toggle-show-weapon-ownership="toggleShowWeaponOwnership"
+                :show-weapon-ownership-in-list="showWeaponOwnershipInList"
+                :show-weapon-ownership-in-plans="showWeaponOwnershipInPlans"
+                :toggle-show-weapon-ownership-in-list="toggleShowWeaponOwnershipInList"
+                :toggle-show-weapon-ownership-in-plans="toggleShowWeaponOwnershipInPlans"
                 :export-weapon-marks="exportWeaponMarks"
                 :handle-marks-import-file="handleMarksImportFile"
                 :marks-import-file-name="marksImportFileName"
@@ -1041,7 +1063,7 @@
                       <span class="attr-label">{{ t("nav.skill_attributes") }}：</span>{{ tTerm("s3", weapon.s3) }}
                     </span>
                   </div>
-                  <div class="weapon-exclude-row" @click.stop>
+                  <div v-if="showWeaponOwnershipInPlans" class="weapon-exclude-row" @click.stop>
                     <label class="exclude-checkbox-label">
                       <input
                         type="checkbox"

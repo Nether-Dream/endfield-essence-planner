@@ -667,6 +667,13 @@
         contain-intrinsic-size: 124px 124px;
       }
 
+      .weapon-grid-entry {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+        min-height: 150px;
+      }
+
       .weapon-item:hover {
         border-color: rgba(var(--color-white-rgb), var(--alpha-35));
         transform: none;
@@ -1067,6 +1074,23 @@
         opacity: var(--alpha-80);
       }
 
+      .plan-config-section-static .plan-config-section-body {
+        border-top: none;
+      }
+
+      .plan-config-section-title-static {
+        margin-bottom: 4px;
+      }
+
+      .plan-config-subtitle {
+        margin-top: 10px;
+        margin-bottom: 2px;
+      }
+
+      .plan-config-subtitle:first-child {
+        margin-top: 0;
+      }
+
       .switch-compact {
         position: relative;
         justify-content: center;
@@ -1281,6 +1305,11 @@
         user-select: none;
       }
 
+      .exclude-checkbox-label.compact {
+        padding: 1px 4px;
+        font-size: 10px;
+      }
+
       .exclude-checkbox-label:hover {
         background: rgba(var(--color-white-rgb), var(--alpha-08));
       }
@@ -1357,6 +1386,16 @@
 
       .weapon-item.rarity-4 .weapon-name {
         background-image: var(--rarity-4-frame);
+      }
+
+      .weapon-grid-ownership-row {
+        position: relative;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        padding: 0 2px 2px;
+        min-height: 18px;
       }
 
       .weapon-art {

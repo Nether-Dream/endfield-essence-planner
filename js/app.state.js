@@ -122,7 +122,8 @@
     state.equipRefiningMobilePanel = ref("equips");
     state.equipRefiningSelectedName = ref("");
     state.showWeaponAttrs = ref(false);
-    state.showWeaponOwnership = ref(false);
+    state.showWeaponOwnershipInList = ref(false);
+    state.showWeaponOwnershipInPlans = ref(false);
     state.showAttrHint = ref(false);
     state.showFilterPanel = ref(true);
     state.filterPanelManuallySet = ref(false);

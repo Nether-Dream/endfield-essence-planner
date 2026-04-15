@@ -440,7 +440,14 @@
             state.showWeaponAttrs.value = restored.showWeaponAttrs;
           }
           if (typeof restored.showWeaponOwnership === "boolean") {
-            state.showWeaponOwnership.value = restored.showWeaponOwnership;
+            state.showWeaponOwnershipInList.value = restored.showWeaponOwnership;
+            state.showWeaponOwnershipInPlans.value = restored.showWeaponOwnership;
+          }
+          if (typeof restored.showWeaponOwnershipInList === "boolean") {
+            state.showWeaponOwnershipInList.value = restored.showWeaponOwnershipInList;
+          }
+          if (typeof restored.showWeaponOwnershipInPlans === "boolean") {
+            state.showWeaponOwnershipInPlans.value = restored.showWeaponOwnershipInPlans;
           }
           if (typeof restored.filterPanelManuallySet === "boolean") {
             state.filterPanelManuallySet.value = restored.filterPanelManuallySet;
@@ -646,7 +653,8 @@
         schemeBaseSelections: state.schemeBaseSelections.value,
         weaponAttrOverrides: state.weaponAttrOverrides.value,
         showWeaponAttrs: state.showWeaponAttrs.value,
-        showWeaponOwnership: state.showWeaponOwnership.value,
+        showWeaponOwnershipInList: state.showWeaponOwnershipInList.value,
+        showWeaponOwnershipInPlans: state.showWeaponOwnershipInPlans.value,
         showAllSchemes: state.showAllSchemes.value,
         backgroundDisplayEnabled: state.backgroundDisplayEnabled.value,
         recommendationConfig: state.recommendationConfig.value,
