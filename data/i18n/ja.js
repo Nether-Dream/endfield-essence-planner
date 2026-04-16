@@ -620,7 +620,7 @@ Object.assign(window.I18N["ja"].strings, {
   "plan_config.custom_weapon_duplicate": "名前が既に存在します：{name}",
   "plan_config.custom_weapon_storage_failed": "カスタム武器の保存に失敗しました。",
   "plan_config.when_enabled_only_weapons_that_are_both_owned_and_essenc": "有効化すると「所持済みかつ基質所持済み」の武器のみ非表示になります。未所持だが基質所持済みの武器は表示されます。",
-  "plan_config.when_enabled_weapon_list_shows_ownership_tags": "有効にすると、左側の武器一覧と右側のプラン一覧で「武器 / 基質」の所持状態を素早く編集できます。",
+  "plan_config.when_enabled_weapon_list_shows_ownership_tags": "有効にすると、左側の武器一覧で「武器 / 基質」の所持状態を素早く編集できます。",
   "plan_config.when_enabled_plan_list_shows_ownership_tags": "有効にすると、右側のプランおすすめ一覧で「武器 / 基質」の所持状態を素早く編集できます。",
   "plan_config.when_enabled_rule_applies_to_plan_recommendations": "有効にすると、この表示ルールをプランおすすめに適用します。",
   "plan_config.when_enabled_rule_applies_to_weapon_list": "有効にすると、この表示ルールを武器一覧に適用します。",

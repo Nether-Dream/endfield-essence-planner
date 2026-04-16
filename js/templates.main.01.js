@@ -938,7 +938,7 @@
           </div>
 
           <div v-else-if="recommendationEmptyReason === 'regionFilteredOut'" class="empty">
-            {{ t("plan.region_filter_uncovered_weapons_title") }}
+            {{ t("nav.region_filter_no_matching_plans") }}
           </div>
 
           <div v-else-if="recommendationEmptyReason === 'noScheme'" class="recommendations">

@@ -613,6 +613,9 @@
       if (workspace.weaponAttrOverrides && Object.keys(workspace.weaponAttrOverrides).length > 0) {
         return true;
       }
+      if (Array.isArray(workspace.selectedRegions) && workspace.selectedRegions.length > 0) {
+        return true;
+      }
       return false;
     };
 

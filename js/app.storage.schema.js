@@ -314,9 +314,17 @@
       const s1Filter = Array.from(new Set(sanitizeArray(raw.filterS1).filter((value) => s1Set.has(value))));
       const s2Filter = Array.from(new Set(sanitizeArray(raw.filterS2).filter((value) => s2Set.has(value))));
       const s3Filter = Array.from(new Set(sanitizeArray(raw.filterS3).filter((value) => s3Set.has(value))));
+      const regionFilter = Array.from(
+        new Set(
+          sanitizeArray(raw.selectedRegions)
+            .map((value) => (typeof value === "string" ? value.trim() : String(value || "").trim()))
+            .filter((value) => regionSet.has(value))
+        )
+      );
       if (s1Filter.length) next.filterS1 = s1Filter;
       if (s2Filter.length) next.filterS2 = s2Filter;
       if (s3Filter.length) next.filterS3 = s3Filter;
+      if (regionFilter.length) next.selectedRegions = regionFilter;
 
       return next;
     };

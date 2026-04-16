@@ -927,16 +927,18 @@
     const toggleRegionFilter = (region) => {
       const current = state.selectedRegions.value || [];
       const regionOptions = state.regionOptions.value || [];
+      const nextSet = new Set(current);
       if (!current.length) {
-        const next = regionOptions.filter((r) => r !== region);
-        state.selectedRegions.value = next.length === regionOptions.length ? [] : next;
+        regionOptions.forEach((item) => {
+          if (item !== region) nextSet.add(item);
+        });
       } else if (current.includes(region)) {
-        const next = current.filter((r) => r !== region);
-        state.selectedRegions.value = next.length === 0 ? [] : next;
+        nextSet.delete(region);
       } else {
-        const next = [...current, region];
-        state.selectedRegions.value = next.length === regionOptions.length ? [] : next;
+        nextSet.add(region);
       }
+      const next = regionOptions.filter((item) => nextSet.has(item));
+      state.selectedRegions.value = next.length === regionOptions.length ? [] : next;
     };
 
     const hasAttributeFilters = computed(

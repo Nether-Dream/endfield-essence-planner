@@ -589,7 +589,7 @@ Object.assign(window.I18N["zh-CN"].strings, {
   "plan_config.custom_weapon_duplicate": "名称已存在：{name}",
   "plan_config.custom_weapon_storage_failed": "保存失败，请检查浏览器存储空间",
   "plan_config.when_enabled_only_weapons_that_are_both_owned_and_essenc": "开启后，仅隐藏“已拥有且基质已有”的武器；未拥有但基质已有的武器仍会显示。",
-  "plan_config.when_enabled_weapon_list_shows_ownership_tags": "开启后，可在左侧武器列表与右侧方案列表中快捷编辑“武器 / 基质”拥有状态。",
+  "plan_config.when_enabled_weapon_list_shows_ownership_tags": "开启后，可在左侧武器列表中快捷编辑“武器 / 基质”拥有状态。",
   "plan_config.when_enabled_plan_list_shows_ownership_tags": "开启后，可在右侧方案推荐列表中快捷编辑“武器 / 基质”拥有状态。",
   "plan_config.when_enabled_rule_applies_to_plan_recommendations": "开启后，这条隐藏规则会应用到方案推荐。",
   "plan_config.when_enabled_rule_applies_to_weapon_list": "开启后，这条隐藏规则会应用到武器列表。",

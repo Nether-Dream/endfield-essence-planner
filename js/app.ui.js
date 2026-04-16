@@ -1183,10 +1183,12 @@
 
     const togglePlanConfig = () => {
       const nextOpen = !showPlanConfig.value;
-      if (!nextOpen && planConfigOwnershipHintViewed.value) {
+      const flushPlanConfigHintsOnClose = () => {
+        if (!planConfigOwnershipHintViewed.value) return;
         markPlanConfigOwnershipHintSeen();
         planConfigOwnershipHintViewed.value = false;
-      }
+      };
+      if (!nextOpen) flushPlanConfigHintsOnClose();
       showPlanConfig.value = nextOpen;
       if (nextOpen) {
         markPlanConfigHintSeen();
@@ -1234,10 +1236,7 @@
         showSecondaryMenu.value = false;
       }
       if (showPlanConfig.value && !event.target.closest(".plan-config")) {
-        if (planConfigOwnershipHintViewed.value) {
-          markPlanConfigOwnershipHintSeen();
-          planConfigOwnershipHintViewed.value = false;
-        }
+        flushPlanConfigHintsOnClose();
         showPlanConfig.value = false;
       }
       if (showLangMenu.value && !event.target.closest(".lang-switch")) {
@@ -1248,10 +1247,7 @@
     const handleDocKeydown = (event) => {
       if (!event) return;
       if (event.key === "Escape") {
-        if (showPlanConfig.value && planConfigOwnershipHintViewed.value) {
-          markPlanConfigOwnershipHintSeen();
-          planConfigOwnershipHintViewed.value = false;
-        }
+        if (showPlanConfig.value) flushPlanConfigHintsOnClose();
         showSecondaryMenu.value = false;
         showPlanConfig.value = false;
         showLangMenu.value = false;

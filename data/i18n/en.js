@@ -620,7 +620,7 @@ Object.assign(window.I18N["en"].strings, {
   "plan_config.custom_weapon_duplicate": "Name already exists: {name}",
   "plan_config.custom_weapon_storage_failed": "Failed to save custom weapons.",
   "plan_config.when_enabled_only_weapons_that_are_both_owned_and_essenc": "When enabled, only weapons that are both owned and essence-owned are hidden; unowned but essence-owned weapons stay visible.",
-  "plan_config.when_enabled_weapon_list_shows_ownership_tags": "When enabled, you can quickly edit Weapon / Essence ownership in the left weapon list and right plan list.",
+  "plan_config.when_enabled_weapon_list_shows_ownership_tags": "When enabled, you can quickly edit Weapon / Essence ownership in the left weapon list.",
   "plan_config.when_enabled_plan_list_shows_ownership_tags": "When enabled, you can quickly edit Weapon / Essence ownership in the right plan recommendation list.",
   "plan_config.when_enabled_rule_applies_to_plan_recommendations": "When enabled, this visibility rule applies to plan recommendations.",
   "plan_config.when_enabled_rule_applies_to_weapon_list": "When enabled, this visibility rule applies to the weapon list.",
