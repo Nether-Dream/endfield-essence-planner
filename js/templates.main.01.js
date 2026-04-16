@@ -351,6 +351,8 @@
                 :recommendation-config="recommendationConfig"
                 :show-plan-config="showPlanConfig"
                 :show-plan-config-hint-dot="showPlanConfigHintDot"
+                :show-plan-config-display-rules-hint-dot="showPlanConfigDisplayRulesHintDot"
+                :show-plan-config-ownership-hint-dot="showPlanConfigOwnershipHintDot"
                 :is-plan-config-section-collapsed="isPlanConfigSectionCollapsed"
                 :toggle-plan-config-section-collapsed="togglePlanConfigSectionCollapsed"
                 :show-weapon-attrs="showWeaponAttrs"
@@ -358,6 +360,8 @@
                 :show-weapon-ownership-in-plans="showWeaponOwnershipInPlans"
                 :toggle-show-weapon-ownership-in-list="toggleShowWeaponOwnershipInList"
                 :toggle-show-weapon-ownership-in-plans="toggleShowWeaponOwnershipInPlans"
+                :mark-plan-config-display-rules-hint-seen="markPlanConfigDisplayRulesHintSeen"
+                :mark-plan-config-ownership-hint-seen="markPlanConfigOwnershipHintSeen"
                 :export-weapon-marks="exportWeaponMarks"
                 :handle-marks-import-file="handleMarksImportFile"
                 :marks-import-file-name="marksImportFileName"
@@ -401,9 +405,6 @@
                 @click="toggleShowWeaponAttrs"
               >
                 {{ showWeaponAttrs ? t("nav.hide_attributes_ownership_notes") : t("nav.show_attributes_ownership_notes") }}
-              </button>
-              <button class="ghost-button" :class="{ 'is-active': showWeaponOwnershipInList }" @click="toggleShowWeaponOwnershipInList">
-                {{ t("plan_config.quick_edit_ownership_state") }}
               </button>
               <button class="ghost-button" @click="toggleFilterPanel">
                 {{ showFilterPanel ? t("nav.collapse_filters") : t("button.expand_filters") }}
@@ -865,6 +866,8 @@
                 :recommendation-config="recommendationConfig"
                 :show-plan-config="showPlanConfig"
                 :show-plan-config-hint-dot="showPlanConfigHintDot"
+                :show-plan-config-display-rules-hint-dot="showPlanConfigDisplayRulesHintDot"
+                :show-plan-config-ownership-hint-dot="showPlanConfigOwnershipHintDot"
                 :is-plan-config-section-collapsed="isPlanConfigSectionCollapsed"
                 :toggle-plan-config-section-collapsed="togglePlanConfigSectionCollapsed"
                 :show-weapon-attrs="showWeaponAttrs"
@@ -872,6 +875,8 @@
                 :show-weapon-ownership-in-plans="showWeaponOwnershipInPlans"
                 :toggle-show-weapon-ownership-in-list="toggleShowWeaponOwnershipInList"
                 :toggle-show-weapon-ownership-in-plans="toggleShowWeaponOwnershipInPlans"
+                :mark-plan-config-display-rules-hint-seen="markPlanConfigDisplayRulesHintSeen"
+                :mark-plan-config-ownership-hint-seen="markPlanConfigOwnershipHintSeen"
                 :export-weapon-marks="exportWeaponMarks"
                 :handle-marks-import-file="handleMarksImportFile"
                 :marks-import-file-name="marksImportFileName"

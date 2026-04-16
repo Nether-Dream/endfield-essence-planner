@@ -17,6 +17,80 @@
       @input="$emit('update:query', $event.target.value)"
     />
   </label>
+  <div class="equip-refining-filter-panel">
+    <button
+      type="button"
+      class="equip-refining-filter-header"
+      :aria-expanded="!filterPanelCollapsed"
+      @click="toggleFilterPanelCollapsed"
+    >
+      <div class="equip-refining-filter-head">
+        <span class="secondary-label">{{ t("equip_refining.attribute_filters") }}</span>
+        <span class="equip-refining-filter-actions">
+          <span class="equip-refining-filter-chevron" :class="{ 'is-open': !filterPanelCollapsed }" aria-hidden="true"></span>
+        </span>
+      </div>
+    </button>
+    <div v-show="!filterPanelCollapsed" class="equip-refining-filter-body">
+    <div class="equip-refining-filter-toolbar">
+      <button
+        type="button"
+        class="ghost-button equip-refining-filter-clear"
+        @click="clearFilters"
+      >
+        {{ t("equip_refining.clear_filters") }}
+      </button>
+    </div>
+    <div class="equip-refining-filter-group">
+      <div class="equip-refining-filter-label">{{ t("equip_refining.sub_attr_1") }}</div>
+      <div class="equip-refining-filter-chips">
+        <button
+          v-for="option in filterOptionEntries.sub1"
+          :key="'equip-filter-sub1-' + option.value"
+          type="button"
+          class="filter-chip"
+          :class="{ 'is-active': filterSub1.includes(option.value), 'is-disabled': option.isDisabled && !filterSub1.includes(option.value) }"
+          :disabled="option.isDisabled && !filterSub1.includes(option.value)"
+          @click="option.isDisabled && !filterSub1.includes(option.value) ? null : toggleFilterValue('sub1', option.value)"
+        >
+          <span>{{ option.value }}</span>
+        </button>
+      </div>
+    </div>
+    <div class="equip-refining-filter-group">
+      <div class="equip-refining-filter-label">{{ t("equip_refining.sub_attr_2") }}</div>
+      <div class="equip-refining-filter-chips">
+        <button
+          v-for="option in filterOptionEntries.sub2"
+          :key="'equip-filter-sub2-' + option.value"
+          type="button"
+          class="filter-chip"
+          :class="{ 'is-active': filterSub2.includes(option.value), 'is-disabled': option.isDisabled && !filterSub2.includes(option.value) }"
+          :disabled="option.isDisabled && !filterSub2.includes(option.value)"
+          @click="option.isDisabled && !filterSub2.includes(option.value) ? null : toggleFilterValue('sub2', option.value)"
+        >
+          <span>{{ option.value }}</span>
+        </button>
+      </div>
+    </div>
+    <div class="equip-refining-filter-group">
+      <div class="equip-refining-filter-label">{{ t("equip_refining.special_effect") }}</div>
+      <div class="equip-refining-filter-chips">
+        <button
+          v-for="option in filterOptionEntries.special"
+          :key="'equip-filter-special-' + option.value"
+          type="button"
+          class="filter-chip"
+          :class="{ 'is-active': filterSpecial.includes(option.value), 'is-disabled': option.isDisabled && !filterSpecial.includes(option.value) }"
+          :disabled="option.isDisabled && !filterSpecial.includes(option.value)"
+          @click="option.isDisabled && !filterSpecial.includes(option.value) ? null : toggleFilterValue('special', option.value)"
+        >
+          <span>{{ option.value }}</span>
+        </button>
+      </div>
+    </div>
+    </div>
+  </div>
   <div v-if="groupedSets.length" class="equip-refining-set-list">
     <section
       v-for="setGroup in groupedSets"

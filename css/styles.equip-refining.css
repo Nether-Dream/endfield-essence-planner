@@ -38,6 +38,87 @@
   gap: 14px;
 }
 
+.equip-refining-filter-panel {
+  display: grid;
+  gap: 10px;
+  padding: 10px 12px;
+  border: 1px solid var(--stroke);
+  border-radius: var(--radius-md);
+  background: var(--panel);
+}
+
+.equip-refining-filter-header {
+  width: 100%;
+  border: none;
+  background: transparent;
+  padding: 0;
+  cursor: pointer;
+}
+
+.equip-refining-filter-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.equip-refining-filter-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.equip-refining-filter-chevron {
+  width: 9px;
+  height: 9px;
+  border-right: 2px solid currentcolor;
+  border-bottom: 2px solid currentcolor;
+  transform: rotate(135deg);
+  transition: transform 0.22s ease;
+  opacity: var(--alpha-78);
+}
+
+.equip-refining-filter-chevron.is-open {
+  transform: rotate(45deg);
+}
+
+.equip-refining-filter-body {
+  display: grid;
+  gap: 10px;
+}
+
+.equip-refining-filter-toolbar {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.equip-refining-filter-clear {
+  padding: 4px 10px;
+  font-size: 12px;
+}
+
+.equip-refining-filter-group {
+  display: grid;
+  gap: 6px;
+}
+
+.equip-refining-filter-label {
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.equip-refining-filter-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.equip-refining-filter-chips .filter-chip.is-disabled {
+  text-decoration: line-through;
+  text-decoration-thickness: 1px;
+  text-decoration-color: rgba(var(--color-white-rgb), var(--alpha-35));
+}
+
 .equip-refining-set-group {
   display: flex;
   flex-direction: column;

@@ -373,8 +373,8 @@
             : typeof source.showWeaponOwnership === "boolean"
               ? source.showWeaponOwnership
               : useCurrentFallback
-                ? Boolean(getRefValue(state.showWeaponOwnershipInPlans, false))
-                : false,
+                ? Boolean(getRefValue(state.showWeaponOwnershipInPlans, true))
+                : true,
         showAllSchemes:
           typeof source.showAllSchemes === "boolean"
             ? source.showAllSchemes

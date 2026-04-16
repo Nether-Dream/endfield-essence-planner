@@ -671,7 +671,6 @@
         display: flex;
         flex-direction: column;
         gap: 2px;
-        min-height: 150px;
       }
 
       .weapon-item:hover {
@@ -1082,6 +1081,17 @@
         margin-bottom: 4px;
       }
 
+      .plan-config-rule-label-with-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+      }
+
+      .plan-config-inline-hint-dot {
+        position: static;
+        min-width: 0;
+      }
+
       .plan-config-subtitle {
         margin-top: 10px;
         margin-bottom: 2px;
@@ -1308,6 +1318,35 @@
       .exclude-checkbox-label.compact {
         padding: 1px 4px;
         font-size: 10px;
+      }
+
+      .weapon-grid-ownership-row .exclude-checkbox-label.compact,
+      .weapon-grid-ownership-row .exclude-checkbox-label.compact:hover {
+        background: transparent;
+      }
+
+      @media (max-width: 640px) and (orientation: portrait) {
+        .weapon-grid-ownership-row {
+          flex-direction: row;
+          justify-content: center;
+          gap: 1px;
+          padding: 0;
+          margin-top: -1px;
+          align-items: center;
+          flex-wrap: nowrap;
+        }
+
+        .exclude-checkbox-label.compact {
+          gap: 2px;
+          padding: 0;
+          font-size: 8px;
+          justify-content: center;
+        }
+
+        .weapon-grid-ownership-row .exclude-checkbox {
+          width: 11px;
+          height: 11px;
+        }
       }
 
       .exclude-checkbox-label:hover {

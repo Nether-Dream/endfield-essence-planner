@@ -185,10 +185,15 @@
               type="button"
               class="plan-config-section-header"
               :aria-expanded="!isPlanConfigSectionCollapsed('displayRules')"
-              @click="togglePlanConfigSectionCollapsed('displayRules')"
+              @click="togglePlanConfigSectionCollapsed('displayRules'); markPlanConfigDisplayRulesHintSeen()"
             >
               <div class="plan-config-section-title">
                 <span class="secondary-label">{{ t("plan_config.display_and_filters") }}</span>
+                <span
+                  v-if="showPlanConfigDisplayRulesHintDot"
+                  class="plan-config-hint-dot plan-config-inline-hint-dot"
+                  aria-hidden="true"
+                >{{ t("plan_config.new_badge") }}</span>
               </div>
               <span
                 class="plan-config-section-chevron"
@@ -338,7 +343,14 @@
                     </div>
                   </div>
                   <div class="plan-config-rule-row">
-                    <div class="plan-config-rule-label">{{ t("plan_config.quick_edit_ownership_state") }}</div>
+                    <div class="plan-config-rule-label plan-config-rule-label-with-badge">
+                      <span>{{ t("plan_config.quick_edit_ownership_state") }}</span>
+                      <span
+                        v-if="showPlanConfigOwnershipHintDot"
+                        class="plan-config-hint-dot plan-config-inline-hint-dot"
+                        aria-hidden="true"
+                      >{{ t("plan_config.new_badge") }}</span>
+                    </div>
                     <div class="plan-config-rule-col">
                       <button
                         class="ghost-button toggle-button switch-toggle switch-compact"
@@ -347,7 +359,7 @@
                         :aria-label="t('plan_config.quick_edit_ownership_state') + ' - ' + t('plan_config.rule_scope_weapon_list')"
                         role="switch"
                         :aria-checked="showWeaponOwnershipInList ? 'true' : 'false'"
-                        @click="toggleShowWeaponOwnershipInList"
+                        @click="toggleShowWeaponOwnershipInList(); markPlanConfigOwnershipHintSeen()"
                       >
                         <span class="switch-label">{{ t("plan_config.quick_edit_ownership_state") }}</span>
                         <span class="switch-track" :class="{ on: showWeaponOwnershipInList }" aria-hidden="true">
@@ -363,7 +375,7 @@
                         :aria-label="t('plan_config.quick_edit_ownership_state') + ' - ' + t('plan_config.rule_scope_plan_recommendations')"
                         role="switch"
                         :aria-checked="showWeaponOwnershipInPlans ? 'true' : 'false'"
-                        @click="toggleShowWeaponOwnershipInPlans"
+                        @click="toggleShowWeaponOwnershipInPlans(); markPlanConfigOwnershipHintSeen()"
                       >
                         <span class="switch-label">{{ t("plan_config.quick_edit_ownership_state") }}</span>
                         <span class="switch-track" :class="{ on: showWeaponOwnershipInPlans }" aria-hidden="true">

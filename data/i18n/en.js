@@ -393,6 +393,8 @@ Object.assign(window.I18N["en"].strings, {
   "equip_refining.follow_the_prompt_to_complete_this_step": "Follow the prompt to complete this step.",
   "equip_refining.i_understand": "I understand",
   "equip_refining.i_understand_count_s": "I understand ({count}s)",
+  "equip_refining.attribute_filters": "Attribute Filters",
+  "equip_refining.clear_filters": "Clear Filters",
   "equip_refining.missing_target_attr": "This equip does not have this attribute",
   "equip_refining.no_matching_equip": "No matching equip found",
   "equip_refining.search_placeholder": "Search equip / set / attributes...",

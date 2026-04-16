@@ -362,6 +362,8 @@ Object.assign(window.I18N["zh-CN"].strings, {
   "equip_refining.follow_the_prompt_to_complete_this_step": "请按提示完成当前操作。",
   "equip_refining.i_understand": "我已知晓",
   "equip_refining.i_understand_count_s": "我已知晓（{count}s）",
+  "equip_refining.attribute_filters": "属性筛选",
+  "equip_refining.clear_filters": "清空筛选",
   "equip_refining.missing_target_attr": "该装备没有这一条属性",
   "equip_refining.no_matching_equip": "未找到匹配装备",
   "equip_refining.search_placeholder": "搜索装备 / 套装 / 属性（支持拼音/首字母）...",

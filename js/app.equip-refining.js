@@ -97,6 +97,10 @@
     const equipRefiningQuery = ref("");
     const equipRefiningCollapsedSetMap = ref({});
     const equipRefiningExpandedRecommendationMap = ref({});
+    const equipRefiningFilterPanelCollapsed = ref(true);
+    const equipRefiningFilterSub1 = ref([]);
+    const equipRefiningFilterSub2 = ref([]);
+    const equipRefiningFilterSpecial = ref([]);
     const isEquipRefiningCompact = ref(false);
     const equipRefiningMobileListScrollY = ref(0);
     const recommendationRowCapacity = ref(1);
@@ -229,6 +233,90 @@
       }
     });
 
+    const uniqueSortedAttrKeys = (items) =>
+      Array.from(new Set(items.filter(Boolean))).sort(compareText);
+
+    const equipRefiningSub1Options = uniqueSortedAttrKeys(
+      equipList.map((equip) => equip && equip.sub1 && equip.sub1.key)
+    );
+    const equipRefiningSub2Options = uniqueSortedAttrKeys(
+      equipList.map((equip) => equip && equip.sub2 && equip.sub2.key)
+    );
+    const equipRefiningSpecialOptions = uniqueSortedAttrKeys(
+      equipList.map((equip) => equip && equip.special && equip.special.key)
+    );
+
+    const matchesEquipRefiningAttrFilters = (equip, filters) => {
+      const sub1Selected = Array.isArray(filters && filters.sub1) ? filters.sub1 : [];
+      const sub2Selected = Array.isArray(filters && filters.sub2) ? filters.sub2 : [];
+      const specialSelected = Array.isArray(filters && filters.special) ? filters.special : [];
+      if (sub1Selected.length) {
+        const key = equip && equip.sub1 && equip.sub1.key;
+        if (!sub1Selected.includes(key)) return false;
+      }
+      if (sub2Selected.length) {
+        const key = equip && equip.sub2 && equip.sub2.key;
+        if (!sub2Selected.includes(key)) return false;
+      }
+      if (specialSelected.length) {
+        const key = equip && equip.special && equip.special.key;
+        if (!specialSelected.includes(key)) return false;
+      }
+      return true;
+    };
+
+    const toggleEquipRefiningFilterValue = (group, value) => {
+      const key = String(group || "");
+      const nextValue = String(value || "").trim();
+      if (!nextValue) return;
+      const map = {
+        sub1: equipRefiningFilterSub1,
+        sub2: equipRefiningFilterSub2,
+        special: equipRefiningFilterSpecial,
+      };
+      const targetRef = map[key];
+      if (!targetRef) return;
+      const current = Array.isArray(targetRef.value) ? targetRef.value : [];
+      if (current.includes(nextValue)) {
+        targetRef.value = current.filter((item) => item !== nextValue);
+        return;
+      }
+      targetRef.value = current.concat(nextValue);
+    };
+
+    const clearEquipRefiningFilters = () => {
+      equipRefiningFilterSub1.value = [];
+      equipRefiningFilterSub2.value = [];
+      equipRefiningFilterSpecial.value = [];
+    };
+
+    const toggleEquipRefiningFilterPanelCollapsed = () => {
+      equipRefiningFilterPanelCollapsed.value = !equipRefiningFilterPanelCollapsed.value;
+    };
+
+    const buildEquipRefiningOptionEntries = (allEquips, currentFilters, selectedValues, field) => {
+      return uniqueSortedAttrKeys(
+        allEquips.map((equip) => equip && equip[field] && equip[field].key)
+      ).map((value) => {
+        const relaxedFilters = {
+          sub1: currentFilters.sub1.filter((item) => item !== value || field !== "sub1"),
+          sub2: currentFilters.sub2.filter((item) => item !== value || field !== "sub2"),
+          special: currentFilters.special.filter((item) => item !== value || field !== "special"),
+        };
+        const count = allEquips.filter((equip) => {
+          if (!matchesEquipRefiningAttrFilters(equip, relaxedFilters)) return false;
+          const key = equip && equip[field] && equip[field].key;
+          return key === value;
+        }).length;
+        return {
+          value,
+          count,
+          isDisabled: count === 0,
+          isSelected: selectedValues.includes(value),
+        };
+      });
+    };
+
     const isEquipRefiningSetCollapsed = (setName) =>
       Boolean((equipRefiningCollapsedSetMap.value || {})[setName || ""]);
 
@@ -286,7 +374,15 @@
 
     const equipRefiningFilteredEquips = computed(() => {
       const queryMeta = createSearchQueryMeta(equipRefiningQuery.value);
-      if (!queryMeta.active) return equipList;
+      const filters = {
+        sub1: Array.isArray(equipRefiningFilterSub1.value) ? equipRefiningFilterSub1.value : [],
+        sub2: Array.isArray(equipRefiningFilterSub2.value) ? equipRefiningFilterSub2.value : [],
+        special: Array.isArray(equipRefiningFilterSpecial.value)
+          ? equipRefiningFilterSpecial.value
+          : [],
+      };
+      const applyAttrFilters = (list) => list.filter((equip) => matchesEquipRefiningAttrFilters(equip, filters));
+      if (!queryMeta.active) return applyAttrFilters(equipList);
       const matched = [];
       equipList.forEach((equip, index) => {
         const score = scoreSearchEntry(equip.searchEntry, queryMeta);
@@ -297,7 +393,7 @@
         if (b.score !== a.score) return b.score - a.score;
         return a.index - b.index;
       });
-      return matched.map((item) => item.equip);
+      return applyAttrFilters(matched.map((item) => item.equip));
     });
 
     const equipRefiningGroupedSets = computed(() => {
@@ -313,6 +409,21 @@
         map.get(key).equips.push(equip);
       });
       return groups;
+    });
+
+    const equipRefiningFilterOptionEntries = computed(() => {
+      const filters = {
+        sub1: Array.isArray(equipRefiningFilterSub1.value) ? equipRefiningFilterSub1.value : [],
+        sub2: Array.isArray(equipRefiningFilterSub2.value) ? equipRefiningFilterSub2.value : [],
+        special: Array.isArray(equipRefiningFilterSpecial.value)
+          ? equipRefiningFilterSpecial.value
+          : [],
+      };
+      return {
+        sub1: buildEquipRefiningOptionEntries(equipList, filters, filters.sub1, "sub1"),
+        sub2: buildEquipRefiningOptionEntries(equipList, filters, filters.sub2, "sub2"),
+        special: buildEquipRefiningOptionEntries(equipList, filters, filters.special, "special"),
+      };
     });
 
     const getCandidateBestMatch = (equip, targetAttr) => {
@@ -481,6 +592,21 @@
       }
 
       watch(
+        equipRefiningGroupedSets,
+        (groups) => {
+          const current = equipRefiningCollapsedSetMap.value || {};
+          const next = { ...current };
+          groups.forEach((group) => {
+            const key = String(group && group.setName || "");
+            if (!key || Object.prototype.hasOwnProperty.call(next, key)) return;
+            next[key] = true;
+          });
+          equipRefiningCollapsedSetMap.value = next;
+        },
+        { immediate: true, deep: false }
+      );
+
+      watch(
         [selectedEquipRefiningEquipName, equipRefiningRecommendations],
         () => {
           scheduleRecommendationRowCapacitySync();
@@ -515,6 +641,14 @@
     state.hasMoreRecommendationCandidates = hasMoreRecommendationCandidates;
     state.visibleRecommendationCandidates = visibleRecommendationCandidates;
     state.equipRefiningGroupedSets = equipRefiningGroupedSets;
+    state.equipRefiningFilterSub1 = equipRefiningFilterSub1;
+    state.equipRefiningFilterSub2 = equipRefiningFilterSub2;
+    state.equipRefiningFilterSpecial = equipRefiningFilterSpecial;
+    state.equipRefiningFilterOptionEntries = equipRefiningFilterOptionEntries;
+    state.equipRefiningFilterPanelCollapsed = equipRefiningFilterPanelCollapsed;
+    state.toggleEquipRefiningFilterValue = toggleEquipRefiningFilterValue;
+    state.clearEquipRefiningFilters = clearEquipRefiningFilters;
+    state.toggleEquipRefiningFilterPanelCollapsed = toggleEquipRefiningFilterPanelCollapsed;
     state.selectedEquipRefiningEquipName = selectedEquipRefiningEquipName;
     state.selectedEquipRefiningEquip = selectedEquipRefiningEquip;
     state.selectEquipRefiningEquip = selectEquipRefiningEquip;

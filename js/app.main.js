@@ -359,11 +359,15 @@
       recommendationConfig: { type: Object, required: true },
       showPlanConfig: { type: Boolean, required: true },
       showPlanConfigHintDot: { type: Boolean, required: true },
+      showPlanConfigDisplayRulesHintDot: { type: Boolean, required: true },
+      showPlanConfigOwnershipHintDot: { type: Boolean, required: true },
       showWeaponAttrs: { type: Boolean, required: true },
       showWeaponOwnershipInList: { type: Boolean, required: true },
       showWeaponOwnershipInPlans: { type: Boolean, required: true },
       toggleShowWeaponOwnershipInList: { type: Function, required: true },
       toggleShowWeaponOwnershipInPlans: { type: Function, required: true },
+      markPlanConfigDisplayRulesHintSeen: { type: Function, required: true },
+      markPlanConfigOwnershipHintSeen: { type: Function, required: true },
       exportWeaponMarks: { type: Function, required: true },
       handleMarksImportFile: { type: Function, required: true },
       marksImportFileName: { type: String, default: "" },
@@ -452,10 +456,18 @@
       t: { type: Function, required: true },
       mobilePanel: { type: String, required: true },
       query: { type: String, required: true },
+      filterSub1: { type: Array, required: true },
+      filterSub2: { type: Array, required: true },
+      filterSpecial: { type: Array, required: true },
+      filterOptionEntries: { type: Object, required: true },
+      filterPanelCollapsed: { type: Boolean, required: true },
       groupedSets: { type: Array, required: true },
       selectedEquipName: { type: String, default: "" },
       isSetCollapsed: { type: Function, required: true },
       toggleSetCollapsed: { type: Function, required: true },
+      toggleFilterValue: { type: Function, required: true },
+      clearFilters: { type: Function, required: true },
+      toggleFilterPanelCollapsed: { type: Function, required: true },
       selectEquip: { type: Function, required: true },
       hasEquipImage: { type: Function, required: true },
       equipImageSrc: { type: Function, required: true },
@@ -1608,6 +1620,8 @@ return { view: "planner" };
         showPlanConfig: state.showPlanConfig,
         showWeaponAttrDataModal: state.showWeaponAttrDataModal,
         showPlanConfigHintDot: state.showPlanConfigHintDot,
+        showPlanConfigDisplayRulesHintDot: state.showPlanConfigDisplayRulesHintDot,
+        showPlanConfigOwnershipHintDot: state.showPlanConfigOwnershipHintDot,
         marksImportError: state.marksImportError,
         marksImportFileName: state.marksImportFileName,
         marksImportSummary: state.marksImportSummary,
@@ -1623,6 +1637,8 @@ return { view: "planner" };
         showRerunRankingNavHintDot: state.showRerunRankingNavHintDot,
         showEditorEntry: state.showEditorEntry,
         togglePlanConfig: state.togglePlanConfig,
+        markPlanConfigDisplayRulesHintSeen: state.markPlanConfigDisplayRulesHintSeen,
+        markPlanConfigOwnershipHintSeen: state.markPlanConfigOwnershipHintSeen,
         isPlanConfigSectionCollapsed: state.isPlanConfigSectionCollapsed,
         togglePlanConfigSectionCollapsed: state.togglePlanConfigSectionCollapsed,
         openWeaponAttrDataModal: state.openWeaponAttrDataModal,
@@ -1755,6 +1771,30 @@ return { view: "planner" };
           if (state.equipRefiningQuery) {
             state.equipRefiningQuery.value = value;
           }
+        },
+        get equipRefiningFilterSub1() {
+          return state.equipRefiningFilterSub1;
+        },
+        get equipRefiningFilterSub2() {
+          return state.equipRefiningFilterSub2;
+        },
+        get equipRefiningFilterSpecial() {
+          return state.equipRefiningFilterSpecial;
+        },
+        get equipRefiningFilterOptionEntries() {
+          return state.equipRefiningFilterOptionEntries;
+        },
+        get equipRefiningFilterPanelCollapsed() {
+          return state.equipRefiningFilterPanelCollapsed;
+        },
+        get toggleEquipRefiningFilterValue() {
+          return state.toggleEquipRefiningFilterValue;
+        },
+        get clearEquipRefiningFilters() {
+          return state.clearEquipRefiningFilters;
+        },
+        get toggleEquipRefiningFilterPanelCollapsed() {
+          return state.toggleEquipRefiningFilterPanelCollapsed;
         },
         get equipRefiningEquipCount() {
           return state.equipRefiningEquipCount;

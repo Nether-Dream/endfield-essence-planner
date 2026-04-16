@@ -393,6 +393,8 @@ Object.assign(window.I18N["ja"].strings, {
   "equip_refining.follow_the_prompt_to_complete_this_step": "案内に従って現在の操作を完了してください。",
   "equip_refining.i_understand": "理解しました",
   "equip_refining.i_understand_count_s": "理解しました（{count}s）",
+  "equip_refining.attribute_filters": "属性フィルター",
+  "equip_refining.clear_filters": "フィルターをクリア",
   "equip_refining.missing_target_attr": "この装備にはこの属性がありません",
   "equip_refining.no_matching_equip": "一致する装備が見つかりません",
   "equip_refining.search_placeholder": "装備 / セット / 属性を検索...",

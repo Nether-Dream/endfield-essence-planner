@@ -1120,6 +1120,38 @@
       }
     };
 
+    const markPlanConfigOwnershipHintSeen = () => {
+      if (!state.showPlanConfigOwnershipHintDot || !state.showPlanConfigOwnershipHintDot.value) return;
+      state.showPlanConfigOwnershipHintDot.value = false;
+      try {
+        localStorage.setItem(
+          state.planConfigOwnershipHintStorageKey,
+          state.planConfigOwnershipHintVersion
+        );
+      } catch (error) {
+        reportStorageIssue("storage.write", state.planConfigOwnershipHintStorageKey, error, {
+          scope: "ui.plan-config-ownership-hint-write",
+        });
+      }
+    };
+
+    const markPlanConfigDisplayRulesHintSeen = () => {
+      if (!state.showPlanConfigDisplayRulesHintDot || !state.showPlanConfigDisplayRulesHintDot.value) return;
+      state.showPlanConfigDisplayRulesHintDot.value = false;
+      try {
+        localStorage.setItem(
+          state.planConfigDisplayRulesHintStorageKey,
+          state.planConfigDisplayRulesHintVersion
+        );
+      } catch (error) {
+        reportStorageIssue("storage.write", state.planConfigDisplayRulesHintStorageKey, error, {
+          scope: "ui.plan-config-display-rules-hint-write",
+        });
+      }
+    };
+
+    const planConfigOwnershipHintViewed = ref(false);
+
     const markEquipRefiningNavHintSeen = () => {
       if (!showEquipRefiningNavHintDot.value) return;
       showEquipRefiningNavHintDot.value = false;
@@ -1151,6 +1183,10 @@
 
     const togglePlanConfig = () => {
       const nextOpen = !showPlanConfig.value;
+      if (!nextOpen && planConfigOwnershipHintViewed.value) {
+        markPlanConfigOwnershipHintSeen();
+        planConfigOwnershipHintViewed.value = false;
+      }
       showPlanConfig.value = nextOpen;
       if (nextOpen) {
         markPlanConfigHintSeen();
@@ -1175,6 +1211,13 @@
       const next = { ...(planConfigSectionCollapsed.value || {}) };
       next[name] = !current;
       planConfigSectionCollapsed.value = next;
+      const nextCollapsed = Boolean(next[name]);
+      if (name === "displayRules" && !nextCollapsed) {
+        markPlanConfigDisplayRulesHintSeen();
+        if (state.showPlanConfigOwnershipHintDot && state.showPlanConfigOwnershipHintDot.value) {
+          planConfigOwnershipHintViewed.value = true;
+        }
+      }
       if (!planConfigSectionManuallySet.value) {
         planConfigSectionManuallySet.value = true;
       }
@@ -1191,6 +1234,10 @@
         showSecondaryMenu.value = false;
       }
       if (showPlanConfig.value && !event.target.closest(".plan-config")) {
+        if (planConfigOwnershipHintViewed.value) {
+          markPlanConfigOwnershipHintSeen();
+          planConfigOwnershipHintViewed.value = false;
+        }
         showPlanConfig.value = false;
       }
       if (showLangMenu.value && !event.target.closest(".lang-switch")) {
@@ -1201,6 +1248,10 @@
     const handleDocKeydown = (event) => {
       if (!event) return;
       if (event.key === "Escape") {
+        if (showPlanConfig.value && planConfigOwnershipHintViewed.value) {
+          markPlanConfigOwnershipHintSeen();
+          planConfigOwnershipHintViewed.value = false;
+        }
         showSecondaryMenu.value = false;
         showPlanConfig.value = false;
         showLangMenu.value = false;
@@ -1410,6 +1461,8 @@
     state.scrollToTop = scrollToTop;
     state.setThemeMode = setThemeMode;
     state.togglePlanConfig = togglePlanConfig;
+    state.markPlanConfigDisplayRulesHintSeen = markPlanConfigDisplayRulesHintSeen;
+    state.markPlanConfigOwnershipHintSeen = markPlanConfigOwnershipHintSeen;
     state.isPlanConfigSectionCollapsed = isPlanConfigSectionCollapsed;
     state.togglePlanConfigSectionCollapsed = togglePlanConfigSectionCollapsed;
     state.markEquipRefiningNavHintSeen = markEquipRefiningNavHintSeen;

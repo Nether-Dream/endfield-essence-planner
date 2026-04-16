@@ -523,6 +523,36 @@
         scope: "restore-plan-config-hint",
       });
     }
+    try {
+      const storedPlanConfigDisplayRulesHintVersion = localStorage.getItem(
+        state.planConfigDisplayRulesHintStorageKey
+      );
+      state.showPlanConfigDisplayRulesHintDot.value =
+        storedPlanConfigDisplayRulesHintVersion !== state.planConfigDisplayRulesHintVersion;
+    } catch (error) {
+      state.showPlanConfigDisplayRulesHintDot.value = true;
+      recoveryApi.reportStorageIssue(
+        "storage.read",
+        state.planConfigDisplayRulesHintStorageKey,
+        error,
+        { scope: "restore-plan-config-display-rules-hint" }
+      );
+    }
+    try {
+      const storedPlanConfigOwnershipHintVersion = localStorage.getItem(
+        state.planConfigOwnershipHintStorageKey
+      );
+      state.showPlanConfigOwnershipHintDot.value =
+        storedPlanConfigOwnershipHintVersion !== state.planConfigOwnershipHintVersion;
+    } catch (error) {
+      state.showPlanConfigOwnershipHintDot.value = true;
+      recoveryApi.reportStorageIssue(
+        "storage.read",
+        state.planConfigOwnershipHintStorageKey,
+        error,
+        { scope: "restore-plan-config-ownership-hint" }
+      );
+    }
 
     try {
       const storedEquipRefiningNavHintVersion = localStorage.getItem(
