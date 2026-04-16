@@ -253,6 +253,18 @@
       const selectedRegions = Array.isArray(state.selectedRegions.value)
         ? state.selectedRegions.value.filter(Boolean)
         : [];
+      const allCoveredNames = new Set();
+      allSchemes.forEach((scheme) => {
+        const names = Array.isArray(scheme.effectiveSelectedMatchNames)
+          ? scheme.effectiveSelectedMatchNames
+          : scheme.selectedMatchNames;
+        if (!Array.isArray(names)) return;
+        names.forEach((name) => {
+          if (name) allCoveredNames.add(name);
+        });
+      });
+      const regionFilterReducedCoverage =
+        selectedRegions.length > 0 && targetNames.some((name) => allCoveredNames.has(name) && !coveredNames.has(name));
 
       return {
         totalSelected: targetNames.length,
@@ -260,7 +272,7 @@
         coveredNames: Array.from(coveredNames),
         missingNames,
         hasGap: true,
-        cause: selectedRegions.length ? "regionFilter" : "coverage",
+        cause: regionFilterReducedCoverage ? "regionFilter" : "coverage",
       };
     });
 

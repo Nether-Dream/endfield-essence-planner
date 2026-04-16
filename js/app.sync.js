@@ -1772,7 +1772,9 @@
       state.filterS1.value = comparable.workspace.filterS1 || [];
       state.filterS2.value = comparable.workspace.filterS2 || [];
       state.filterS3.value = comparable.workspace.filterS3 || [];
-      state.selectedRegions.value = comparable.workspace.selectedRegions || [];
+      state.selectedRegions.value = Array.isArray(comparable.workspace.selectedRegions)
+        ? comparable.workspace.selectedRegions
+        : [];
       state.weaponAttrOverrides.value = comparable.workspace.weaponAttrOverrides || {};
       state.showWeaponAttrs.value = Boolean(comparable.workspace.showWeaponAttrs);
       state.showWeaponOwnershipInList.value = Boolean(
