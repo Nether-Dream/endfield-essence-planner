@@ -13,3 +13,4 @@ ldy/
 .agents
 .shared
 references
+.playwright-mcp

@@ -2,6 +2,19 @@
   window.__APP_TEMPLATES = Object.assign({}, window.__APP_TEMPLATES, {
     planConfigControl: `
 <div class="plan-config" @click.stop>
+        <div v-if="shouldShowWeaponOwnershipHint" class="weapon-ownership-hint" @click.stop>
+          <div class="hint-content">
+            <span class="hint-icon">💡</span>
+            <div class="hint-text">
+              <p class="hint-title">{{ t("hint.weapon_ownership_disabled") }}</p>
+              <p class="hint-desc">{{ t("hint.weapon_ownership_guide") }}</p>
+            </div>
+            <button class="hint-dismiss" type="button" @click.stop="dismissWeaponOwnershipHint">
+              {{ t("button.dismiss_forever") }}
+            </button>
+          </div>
+          <div class="hint-arrow"></div>
+        </div>
         <button
           class="plan-config-entry-button"
           :class="{ 'is-active': showPlanConfig }"

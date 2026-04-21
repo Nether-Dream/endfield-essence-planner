@@ -896,6 +896,36 @@
       }
     };
 
+    // 拥有状态功能检测和提示相关函数
+    const isWeaponOwnershipFeatureDisabled = computed(() => {
+      return !state.showWeaponOwnershipInList.value && !state.showWeaponOwnershipInPlans.value;
+    });
+
+    const shouldShowWeaponOwnershipHint = computed(() => {
+      return isWeaponOwnershipFeatureDisabled.value && !state.weaponOwnershipHintDismissed.value;
+    });
+
+    const dismissWeaponOwnershipHint = () => {
+      state.weaponOwnershipHintDismissed.value = true;
+      try {
+        localStorage.setItem(state.weaponOwnershipHintStorageKey, "dismissed");
+      } catch (error) {
+        // ignore write failures
+      }
+    };
+
+    const readWeaponOwnershipHintDismissed = () => {
+      try {
+        return localStorage.getItem(state.weaponOwnershipHintStorageKey) === "dismissed";
+      } catch (error) {
+        return false;
+      }
+    };
+
+    const initWeaponOwnershipHint = () => {
+      state.weaponOwnershipHintDismissed.value = readWeaponOwnershipHintDismissed();
+    };
+
     const toggleFilterPanel = () => {
       state.showFilterPanel.value = !state.showFilterPanel.value;
       if (state.filterPanelManuallySet && state.filterPanelManuallySet.value !== true) {
@@ -1453,5 +1483,11 @@
     state.allWeaponsSelected = allWeaponsSelected;
     state.selectAllWeapons = selectAllWeapons;
     state.dismissAttrHint = dismissAttrHint;
+    
+    // 拥有状态功能检测和提示相关函数
+    state.isWeaponOwnershipFeatureDisabled = isWeaponOwnershipFeatureDisabled;
+    state.shouldShowWeaponOwnershipHint = shouldShowWeaponOwnershipHint;
+    state.dismissWeaponOwnershipHint = dismissWeaponOwnershipHint;
+    state.initWeaponOwnershipHint = initWeaponOwnershipHint;
   };
 })();

@@ -93,6 +93,8 @@
     state.rerunRankingNavHintStorageKey = "planner-rerun-ranking-nav-hint:v1";
     // 更新复刻排行导航提示时递增该版本号，可让红点对所有用户重新显示一次。
     state.rerunRankingNavHintVersion = "1";
+    state.weaponOwnershipHintStorageKey = "planner-weapon-ownership-hint:v1";
+    state.weaponOwnershipHintVersion = "1";
 
     state.lowGpuEnabled = ref(false);
     state.perfPreference = ref("auto");
@@ -146,9 +148,12 @@
     state.marksImportConfirmCountdown = ref(0);
     state.showMarksImportConfirmModal = ref(false);
     state.showEquipRefiningNavHintDot = ref(false);
-
-
     state.showRerunRankingNavHintDot = ref(false);
+    
+    // 拥有状态功能提示相关状态
+    state.showWeaponOwnershipHint = ref(false);
+    state.weaponOwnershipHintDismissed = ref(false);
+
     state.recommendationConfig = ref({
       hideEssenceOwnedWeaponsInPlans: false,
       hideEssenceOwnedOwnedOnly: false,

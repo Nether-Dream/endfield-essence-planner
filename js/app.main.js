@@ -362,6 +362,8 @@
       t: { type: Function, required: true },
       showPlanConfig: { type: Boolean, required: true },
       showPlanConfigHintDot: { type: Boolean, required: true },
+      shouldShowWeaponOwnershipHint: { type: Boolean, default: false },
+      dismissWeaponOwnershipHint: { type: Function, required: true },
     },
     emits: ["toggle"],
     template: planConfigTemplate,
@@ -931,6 +933,10 @@
       initExecutionOrder.forEach((name) => {
         runInitWithContract(name);
       });
+
+      if (typeof state.initWeaponOwnershipHint === "function") {
+        state.initWeaponOwnershipHint();
+      }
 
       const prepareToastLeave = (el) => {
         if (!el || typeof window === "undefined") return;
@@ -1654,6 +1660,8 @@ return { view: "planner" };
         toggleShowWeaponOwnershipInPlans: state.toggleShowWeaponOwnershipInPlans,
         showWeaponOwnershipInList: state.showWeaponOwnershipInList,
         showWeaponOwnershipInPlans: state.showWeaponOwnershipInPlans,
+        shouldShowWeaponOwnershipHint: state.shouldShowWeaponOwnershipHint,
+        dismissWeaponOwnershipHint: state.dismissWeaponOwnershipHint,
         showAttrHint: state.showAttrHint,
         dismissAttrHint: state.dismissAttrHint,
         showFilterPanel: state.showFilterPanel,

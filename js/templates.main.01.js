@@ -902,6 +902,8 @@
             :t="t"
             :show-plan-config="showPlanConfig"
             :show-plan-config-hint-dot="showPlanConfigHintDot"
+            :should-show-weapon-ownership-hint="shouldShowWeaponOwnershipHint"
+            :dismiss-weapon-ownership-hint="dismissWeaponOwnershipHint"
             @toggle="togglePlanConfig"
           ></plan-config-control>
 
