@@ -1026,6 +1026,24 @@
                   ]"
                 >
                   <div class="scheme-weapon-title">
+<div
+  class="weapon-mini"
+  :class="{
+    'rarity-6': weapon.rarity === 6,
+    'rarity-5': weapon.rarity === 5,
+    'rarity-4': weapon.rarity === 4,
+  }"
+>
+  <img
+    v-if="hasImage(weapon)"
+    v-lazy-src="weaponImageSrc(weapon)"
+    :alt="weapon.name"
+    loading="lazy"
+    decoding="async"
+  />
+  <span v-else class="weapon-fallback">{{ weapon.rarity }}★</span>
+  <div class="weapon-mini-band"></div>
+</div>
                     <span v-if="weaponCharacters(weapon).length" class="weapon-avatars">
                       <img
                         v-for="(character, index) in weaponCharacters(weapon)"

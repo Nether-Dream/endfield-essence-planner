@@ -390,7 +390,7 @@ Object.assign(window.I18N["en"].strings, {
   "filter.strict_priority_order": "Strict-priority order",
   "filter.when_enabled_attribute_filters_are_calculated_from_curre": "When enabled, attribute filters are calculated from currently visible weapons (affected by \"also apply to weapon list\" switches); when disabled, true match counts are used.",
   "hint.weapon_ownership_disabled": "Weapon ownership feature disabled",
-  "hint.weapon_ownership_guide": "Enable edit weapon ownership/notes feature in matrix planning settings to mark owned weapons and add notes",
+  "hint.weapon_ownership_guide": "Enable edit weapon ownership/notes feature in Essence Planning Settings to mark owned weapons and add notes",
   "content.sponsor_support_text_long": "Your sponsorship supports server maintenance, feature development, and content creation. Notes you leave may be shown in the sponsor list (updated manually). If you prefer not to be listed, please indicate that. Your encouragement keeps this project going!!!",
   "equip_refining.list_title": "Equip List",
   "equip_refining.collapse_details": "Collapse details",
