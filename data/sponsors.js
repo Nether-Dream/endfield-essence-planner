@@ -56,4 +56,8 @@ window.SPONSORS = [
   { name: "QvQ", amount: "CNY 5.00", note: "", date: "2026-03-26" },
   { name: "由于支付宝限制,看不到账户昵称", amount: "CNY 8.88", note: "不要停下来啊!", date: "2026-03-30" },
   { name: "由于支付宝限制,看不到账户昵称", amount: "CNY 66.60+1.00", note: "超棒的网站,写写大佬!", date: "2026-03-31" },
+  { name: "匿名", amount: "CNY 5.00", note: "", date: "2026-04-14" },
+  { name: "由于支付宝限制,看不到账户昵称", amount: "CNY 20.00", note: "感谢各位的付出，网站真的越变越好了", date: "2026-04-18" },
+  { name: "Who。", amount: "CNY 10.00", note: "", date: "2026-04-20" },
+  { name: "由于支付宝限制,看不到账户昵称", amount: "CNY 6.66", note: "好用，牛逼", date: "2026-04-20" },
 ];

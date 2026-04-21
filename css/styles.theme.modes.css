@@ -316,7 +316,6 @@ html[data-bg-display="off"][data-theme="light"] body::after {
 }
 
 [data-theme="light"] .weapon-attr-item.is-selected .scheme-weapon-title,
-[data-theme="light"] .weapon-attr-item.is-selected .scheme-weapon-title .rarity,
 [data-theme="light"] .weapon-attr-item.is-selected .scheme-weapon-title .weapon-short,
 [data-theme="light"] .weapon-attr-item.is-selected .scheme-weapon-attrs {
   color: #183854;

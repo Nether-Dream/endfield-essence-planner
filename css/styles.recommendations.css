@@ -442,12 +442,7 @@
         color: var(--muted);
       }
 
-      .scheme-weapon-title .rarity {
-        font-size: 11px;
-        color: var(--muted);
-      }
-
-      .scheme-weapon-title .weapon-short {
+.scheme-weapon-title .weapon-short {
         position: absolute;
         top: 0;
         right: 0;

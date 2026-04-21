@@ -2,7 +2,7 @@ window.CONTENT = {
   gameCompat: {
     supportedVersion: "1.2",
     nextVersion: "1.3",
-    nextVersionAt: "2026-06-12T00:00:00Z",
+    nextVersionAt: "2026-06-05T00:00:00Z",
   },
   announcement: {
     version: "1.1.9",
@@ -13,7 +13,7 @@ window.CONTENT = {
     qqGroup: "1045523485",
     qqNote: "反馈与建议交流",
     items: [
-      "==关于标记功能不显示==,请跟随基质规划设置的new指引在基质规划设置-显示与筛选,开启==快捷编辑拥有状态==",
+      "==关于标记功能不显示==,请跟随基质规划设置的new指引在基质规划设置-显示与筛选,==开启编辑拥有状态/备注功能==",
       "如果你对本站使用的背景感兴趣,[点此通过网盘下载随机图中的背景](https://pan.quark.cn/s/27540d6f3706),感谢你的喜欢!",
     ],
   },

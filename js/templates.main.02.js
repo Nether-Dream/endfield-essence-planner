@@ -174,39 +174,41 @@
                       ]"
                     >
                       <div class="scheme-weapon-title">
-                        <div
-                          class="weapon-mini"
-                          :style="rarityBadgeStyle(weapon.rarity, hasImage(weapon))"
-                        >
-                          <img
-                            v-if="hasImage(weapon)"
-                            v-lazy-src="weaponImageSrc(weapon)"
-                            :alt="weapon.name"
-                            loading="lazy"
-                            decoding="async"
-                          />
-                          <span v-else class="weapon-fallback">{{ weapon.rarity }}★</span>
-                        </div>
-                        <span v-if="weaponCharacters(weapon).length" class="weapon-avatars">
-                          <img
-                            v-for="(character, index) in weaponCharacters(weapon)"
-                            :key="\`\${weapon.name}-conflict-character-\${index}\`"
-                            class="weapon-avatar"
-                            v-lazy-src="characterImageSrc(character)"
-                            :alt="tTerm('character', character)"
-                            loading="lazy"
-                            decoding="async"
-                            @error="handleCharacterImageError"
-                          />
-                        </span>
-                        <span class="weapon-name-block">
-                          <span class="weapon-main-name">{{ tTerm("weapon", weapon.name) }}</span>
-                          <span class="weapon-type-subtitle">{{ tTerm("type", weapon.type) }}</span>
-                        </span>
-                        <span class="rarity" :style="rarityTextStyle(weapon.rarity)">
-                          {{ weapon.rarity }}★
-                        </span>
-                        <span v-if="weapon.isCustom" class="badge custom-weapon-badge">
+<div
+  class="weapon-mini"
+  :class="{
+    'rarity-6': weapon.rarity === 6,
+    'rarity-5': weapon.rarity === 5,
+    'rarity-4': weapon.rarity === 4,
+  }"
+>
+  <img
+    v-if="hasImage(weapon)"
+    v-lazy-src="weaponImageSrc(weapon)"
+    :alt="weapon.name"
+    loading="lazy"
+    decoding="async"
+  />
+  <span v-else class="weapon-fallback">{{ weapon.rarity }}★</span>
+  <div class="weapon-mini-band"></div>
+</div>
+<span v-if="weaponCharacters(weapon).length" class="weapon-avatars">
+  <img
+    v-for="(character, index) in weaponCharacters(weapon)"
+    :key="\`\${weapon.name}-conflict-character-\${index}\`"
+    class="weapon-avatar"
+    v-lazy-src="characterImageSrc(character)"
+    :alt="tTerm('character', character)"
+    loading="lazy"
+    decoding="async"
+    @error="handleCharacterImageError"
+  />
+</span>
+<span class="weapon-name-block">
+  <span class="weapon-main-name">{{ tTerm("weapon", weapon.name) }}</span>
+  <span class="weapon-type-subtitle">{{ tTerm("type", weapon.type) }}</span>
+</span>
+<span v-if="weapon.isCustom" class="badge custom-weapon-badge">
                           {{ t("badge.custom_weapon") }}
                         </span>
                         <span class="badge warn">{{ t("plan.conflict") }}</span>
@@ -309,36 +311,34 @@
                   @click="toggleSchemeBasePick(card, weapon)"
                 >
                   <div class="scheme-weapon-title">
-                    <div class="weapon-mini" :style="rarityBadgeStyle(weapon.rarity, hasImage(weapon))">
-                      <img
-                        v-if="hasImage(weapon)"
-                        v-lazy-src="weaponImageSrc(weapon)"
-                        :alt="weapon.name"
-                        loading="lazy"
-                        decoding="async"
-                      />
-                      <span v-else class="weapon-fallback">{{ weapon.rarity }}★</span>
-                    </div>
-                    <span v-if="weaponCharacters(weapon).length" class="weapon-avatars">
-                      <img
-                        v-for="(character, index) in weaponCharacters(weapon)"
-                        :key="\`\${weapon.name}-scheme-character-\${index}\`"
-                        class="weapon-avatar"
-                        v-lazy-src="characterImageSrc(character)"
-                        :alt="tTerm('character', character)"
-                        loading="lazy"
-                        decoding="async"
-                        @error="handleCharacterImageError"
-                      />
-                    </span>
-                    <span class="weapon-name-block">
-                      <span class="weapon-main-name">{{ tTerm("weapon", weapon.name) }}</span>
-                      <span class="weapon-type-subtitle">{{ tTerm("type", weapon.type) }}</span>
-                    </span>
-                    <span class="rarity" :style="rarityTextStyle(weapon.rarity)">
-                      {{ weapon.rarity }}★
-                    </span>
-                    <span v-if="weapon.isCustom" class="badge custom-weapon-badge">
+<div class="weapon-mini" :class="{ 'rarity-6': weapon.rarity === 6, 'rarity-5': weapon.rarity === 5, 'rarity-4': weapon.rarity === 4 }">
+  <img
+    v-if="hasImage(weapon)"
+    v-lazy-src="weaponImageSrc(weapon)"
+    :alt="weapon.name"
+    loading="lazy"
+    decoding="async"
+  />
+  <span v-else class="weapon-fallback">{{ weapon.rarity }}★</span>
+  <div class="weapon-mini-band"></div>
+</div>
+<span v-if="weaponCharacters(weapon).length" class="weapon-avatars">
+  <img
+    v-for="(character, index) in weaponCharacters(weapon)"
+    :key="\`\${weapon.name}-scheme-character-\${index}\`"
+    class="weapon-avatar"
+    v-lazy-src="characterImageSrc(character)"
+    :alt="tTerm('character', character)"
+    loading="lazy"
+    decoding="async"
+    @error="handleCharacterImageError"
+  />
+</span>
+<span class="weapon-name-block">
+  <span class="weapon-main-name">{{ tTerm("weapon", weapon.name) }}</span>
+  <span class="weapon-type-subtitle">{{ tTerm("type", weapon.type) }}</span>
+</span>
+<span v-if="weapon.isCustom" class="badge custom-weapon-badge">
                       {{ t("badge.custom_weapon") }}
                     </span>
                     <span v-if="weapon.isSelected" class="badge">{{ t("nav.selected") }}</span>
