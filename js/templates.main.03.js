@@ -753,16 +753,20 @@
                 <div class="sync-rights-pricing-grid">
                   <div class="sync-rights-price-card">
                     <div class="sync-rights-plan-name">{{ t("sync.membership_plan_month") }}</div>
-                    <div class="sync-rights-price">¥5.00</div>
+                    <div class="sync-rights-price-old">¥5.00</div>
+                    <div class="sync-rights-price">¥3.25</div>
+                    <div v-if="t('sync.membership_plan_month_discount')" class="sync-rights-price-discount">{{ t("sync.membership_plan_month_discount") }}</div>
                   </div>
                   <div class="sync-rights-price-card">
                     <div class="sync-rights-plan-name">{{ t("sync.membership_plan_quarter") }}</div>
-                    <div class="sync-rights-price">¥14.25</div>
+                    <div class="sync-rights-price-old">¥14.25</div>
+                    <div class="sync-rights-price">¥9.00</div>
                     <div class="sync-rights-price-discount">{{ t("sync.membership_plan_quarter_discount") }}</div>
                   </div>
                   <div class="sync-rights-price-card">
                     <div class="sync-rights-plan-name">{{ t("sync.membership_plan_year") }}</div>
-                    <div class="sync-rights-price">¥54.00</div>
+                    <div class="sync-rights-price-old">¥54.00</div>
+                    <div class="sync-rights-price">¥33.00</div>
                     <div class="sync-rights-price-discount">{{ t("sync.membership_plan_year_discount") }}</div>
                   </div>
                 </div>
@@ -846,57 +850,6 @@
                 </div>
               </div>
 
-              <!-- 本地开发折叠面板 -->
-              <div v-if="syncShowDevPanel" class="sync-dev-section">
-                <button
-                  class="sync-dev-toggle sync-tab-button"
-                  type="button"
-                  @click="syncDevExpanded = !syncDevExpanded"
-                >
-                  {{ t("sync.dev_settings_title") }}
-                  <svg class="sync-chevron" :class="{ 'is-expanded': syncDevExpanded }" viewBox="0 0 20 20" fill="currentColor" style="width:14px;height:14px;margin-left:4px;">
-                    <path d="M7 7l3 3 3-3"/>
-                  </svg>
-                </button>
-                <div v-show="syncDevExpanded" class="sync-form" style="gap:10px;">
-                  <div class="sync-field-group">
-                    <label class="sync-label">{{ t("sync.dev_api_base_label") }}</label>
-                    <input
-                      v-model.trim="syncApiBaseInput"
-                      class="sync-input"
-                      type="text"
-                      :placeholder="t('sync.dev_api_base_placeholder')"
-                    />
-                  </div>
-                  <div class="sync-field-group">
-                    <label class="sync-label">{{ t("sync.dev_header_name_label") }}</label>
-                    <input
-                      v-model.trim="syncDevHeaderNameInput"
-                      class="sync-input"
-                      type="text"
-                      :placeholder="t('sync.dev_header_name_placeholder')"
-                    />
-                  </div>
-                  <div class="sync-field-group">
-                    <label class="sync-label">{{ t("sync.dev_header_value_label") }}</label>
-                    <input
-                      v-model.trim="syncDevHeaderValueInput"
-                      class="sync-input"
-                      type="text"
-                      :placeholder="t('sync.dev_header_value_placeholder')"
-                    />
-                  </div>
-                  <button
-                    type="button"
-                    class="sync-text-action-btn"
-                    :disabled="syncBusy"
-                    @click="saveSyncDevSettings"
-                  >
-                    {{ t("sync.save_dev_settings") }}
-                  </button>
-                </div>
-              </div>
-
               <!-- 底部操作 -->
               <div class="sync-footer-hint" style="border-top:1px solid var(--stroke); margin-top:14px;">
                 <div style="display:flex; gap:12px; justify-content:center; flex-wrap:wrap;">
@@ -905,18 +858,60 @@
               </div>
             </div>
 
+            <!-- 本地开发折叠面板（登录状态无关） -->
+            <div v-if="syncShowDevPanel" class="sync-dev-section">
+              <button
+                class="sync-dev-toggle sync-tab-button"
+                type="button"
+                @click="syncDevExpanded = !syncDevExpanded"
+              >
+                {{ t("sync.dev_settings_title") }}
+                <svg class="sync-chevron" :class="{ 'is-expanded': syncDevExpanded }" viewBox="0 0 20 20" fill="currentColor" style="width:14px;height:14px;margin-left:4px;">
+                  <path d="M7 7l3 3 3-3"/>
+                </svg>
+              </button>
+              <div v-show="syncDevExpanded" class="sync-form" style="gap:10px;">
+                <div class="sync-field-group">
+                  <label class="sync-label">{{ t("sync.dev_api_base_label") }}</label>
+                  <input
+                    v-model.trim="syncApiBaseInput"
+                    class="sync-input"
+                    type="text"
+                    :placeholder="t('sync.dev_api_base_placeholder')"
+                  />
+                </div>
+                <div class="sync-field-group">
+                  <label class="sync-label">{{ t("sync.dev_header_name_label") }}</label>
+                  <input
+                    v-model.trim="syncDevHeaderNameInput"
+                    class="sync-input"
+                    type="text"
+                    :placeholder="t('sync.dev_header_name_placeholder')"
+                  />
+                </div>
+                <div class="sync-field-group">
+                  <label class="sync-label">{{ t("sync.dev_header_value_label") }}</label>
+                  <input
+                    v-model.trim="syncDevHeaderValueInput"
+                    class="sync-input"
+                    type="text"
+                    :placeholder="t('sync.dev_header_value_placeholder')"
+                  />
+                </div>
+                <button
+                  type="button"
+                  class="sync-text-action-btn"
+                  :disabled="syncBusy"
+                  @click="saveSyncDevSettings"
+                >
+                  {{ t("sync.save_dev_settings") }}
+                </button>
+              </div>
+            </div>
+
           </div>
         </div>
       </transition>
-
-      <transition name="fade-scale">
-        <div
-          v-if="showSyncModal && syncConflictConfirmMode"
-          class="about-overlay sync-overlay sync-conflict-confirm-overlay"
-          @pointerdown.self="beginOverlayPointerClose('sync-conflict-confirm', $event)"
-          @pointerup.self="finishOverlayPointerClose('sync-conflict-confirm', cancelSyncConflictConfirmation, $event)"
-          @pointercancel.self="cancelOverlayPointerClose('sync-conflict-confirm')"
-        >
           <div class="about-card notice-card sync-conflict-confirm-card">
             <h3>{{ t("sync.conflict_title") }}</h3>
             <div class="about-body">
