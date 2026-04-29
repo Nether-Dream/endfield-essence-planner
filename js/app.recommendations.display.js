@@ -9,8 +9,6 @@
         ? state.effectiveSelectedRegions.value
         : [];
 
-    const reorderForTutorial = (list) => list;
-
     const hasVisibleRows = (scheme) =>
       Boolean(scheme && Array.isArray(scheme.weaponRows) && scheme.weaponRows.length);
 
@@ -23,11 +21,11 @@
     };
 
     const displayPrimaryRecommendations = computed(() =>
-      reorderForTutorial(state.primaryRecommendations.value).filter(hasVisibleRows).filter(filterByRegion)
+      state.primaryRecommendations.value.filter(hasVisibleRows).filter(filterByRegion)
     );
 
     const displayExtraRecommendations = computed(() =>
-      reorderForTutorial(state.extraRecommendations.value).filter(hasVisibleRows).filter(filterByRegion)
+      state.extraRecommendations.value.filter(hasVisibleRows).filter(filterByRegion)
     );
 
     const displayRecommendations = computed(() => {

@@ -95,61 +95,174 @@
     state.weaponOwnershipHintStorageKey = "planner-weapon-ownership-hint:v1";
     state.weaponOwnershipHintVersion = "1";
 
-    state.clearAllSettings = () => {
-      const persistenceApi = window.AppModules && window.AppModules.persistenceApi;
-      let keys = [];
-      if (persistenceApi && typeof persistenceApi.collectManagedStorageKeys === "function") {
-        keys = persistenceApi.collectManagedStorageKeys();
-      }
-      if (!keys.length) {
-        keys = [
-          state.marksStorageKey,
-          state.legacyMarksStorageKey,
-          state.legacyExcludedKey,
-          state.migrationStorageKey,
-          state.uiStateStorageKey,
-          state.attrHintStorageKey,
-          state.customWeaponsStorageKey,
-          state.editorCharactersStorageKey,
-          state.noticeSkipKey,
-          state.perfModeStorageKey,
-          state.themeModeStorageKey,
-          state.langStorageKey,
-          state.backgroundStorageKey,
-          state.backgroundApiStorageKey,
-          state.backgroundDisplayStorageKey,
-          state.backgroundBlurStorageKey,
-          state.syncMetaStorageKey,
-          state.syncPrefsStorageKey,
-          state.syncDevStorageKey,
-          state.planConfigHintStorageKey,
-          state.equipRefiningNavHintStorageKey,
-          state.rerunRankingNavHintStorageKey,
-          state.weaponOwnershipHintStorageKey,
-          state.weaponAttrOverridesStorageKey,
-        ].filter(Boolean);
-      }
+    // 清除数据 — 勾选分组定义（checked 状态独立存储，避免 Vue template setter 破坏 Ref）
+    state.clearDataChecked = ref({});
+    state.clearDataGroups = [
+      {
+        id: "marks",
+        label: "storage.clear_group_marks",
+        keys: ["marksStorageKey", "legacyMarksStorageKey", "legacyExcludedKey", "migrationStorageKey"],
+      },
+      {
+        id: "planner",
+        label: "storage.clear_group_planner",
+        keys: ["uiStateStorageKey"],
+      },
+      {
+        id: "preferences",
+        label: "storage.clear_group_preferences",
+        keys: ["themeModeStorageKey", "langStorageKey", "backgroundStorageKey",
+               "backgroundApiStorageKey", "backgroundDisplayStorageKey", "backgroundBlurStorageKey", "perfModeStorageKey"],
+      },
+      {
+        id: "hints",
+        label: "storage.clear_group_hints",
+        keys: ["attrHintStorageKey", "noticeSkipKey", "planConfigHintStorageKey",
+               "planConfigOwnershipHintStorageKey", "equipRefiningNavHintStorageKey",
+               "rerunRankingNavHintStorageKey", "weaponOwnershipHintStorageKey", "weaponAttrOverridesStorageKey"],
+        legacyPrefix: "legacyNoticePrefix",
+      },
+      {
+        id: "sync",
+        label: "storage.clear_group_sync",
+        keys: ["syncMetaStorageKey", "syncPrefsStorageKey", "syncDevStorageKey"],
+      },
+      {
+        id: "customWeapons",
+        label: "storage.clear_group_custom_weapons",
+        keys: ["customWeaponsStorageKey"],
+      },
+      {
+        id: "editorCharacters",
+        label: "storage.clear_group_editor",
+        desc: "storage.clear_group_editor_desc",
+        keys: ["editorCharactersStorageKey"],
+      },
+    ];
+
+    state.toggleClearDataGroup = (groupId) => {
+      if (!state.clearDataGroupHasData(groupId)) return;
+      const checked = state.clearDataChecked.value;
+      checked[groupId] = !checked[groupId];
+      state.clearDataChecked.value = { ...checked };
+    };
+
+    state.clearDataPresetDefault = () => {
+      const defaultOn = new Set(["planner", "preferences", "hints", "sync"]);
+      const next = {};
+      state.clearDataGroups.forEach((g) => {
+        next[g.id] = defaultOn.has(g.id) && state.clearDataGroupHasData(g.id);
+      });
+      const current = state.clearDataChecked.value;
+      const isSame = state.clearDataGroups.every((g) => Boolean(current[g.id]) === Boolean(next[g.id]));
+      state.clearDataChecked.value = isSame ? {} : next;
+    };
+    state.clearDataPresetAll = () => {
+      const next = {};
+      state.clearDataGroups.forEach((g) => {
+        next[g.id] = state.clearDataGroupHasData(g.id);
+      });
+      const current = state.clearDataChecked.value;
+      const isSame = state.clearDataGroups.every((g) => Boolean(current[g.id]) === Boolean(next[g.id]));
+      state.clearDataChecked.value = isSame ? {} : next;
+    };
+    state.clearDataUncheckAll = () => {
+      state.clearDataChecked.value = {};
+    };
+
+    state.clearDataAnyChecked = () => Object.values(state.clearDataChecked.value).some(Boolean);
+
+    state.clearDataGroupHasData = (groupId) => {
+      const group = state.clearDataGroups.find((g) => g.id === groupId);
+      if (!group) return false;
       try {
-        if (state.legacyNoticePrefix) {
+        for (const keyName of group.keys) {
+          const key = state[keyName];
+          if (key && localStorage.getItem(key) !== null) return true;
+        }
+        if (group.legacyPrefix && state[group.legacyPrefix]) {
           for (let i = 0; i < localStorage.length; i += 1) {
-            const key = localStorage.key(i);
-            if (key && key.startsWith(state.legacyNoticePrefix)) {
-              keys.push(key);
-            }
+            const k = localStorage.key(i);
+            if (k && k.startsWith(state[group.legacyPrefix])) return true;
           }
         }
       } catch (_) {}
-      keys = Array.from(new Set(keys));
-      for (const key of keys) {
-        try { localStorage.removeItem(key); } catch (_) {}
-      }
-      state.showClearSettingsConfirm.value = false;
-      location.reload();
+      return false;
     };
 
-    state.clearAllSiteData = () => {
-      try { localStorage.clear(); } catch (_) {}
-      state.showClearSiteDataConfirm.value = false;
+    state.collectClearDataKeys = () => {
+      const checked = state.clearDataChecked.value;
+      const keys = [];
+      state.clearDataGroups.forEach((group) => {
+        if (!checked[group.id]) return;
+        group.keys.forEach((keyName) => {
+          const key = state[keyName];
+          if (key) keys.push(key);
+        });
+        if (group.legacyPrefix && state[group.legacyPrefix]) {
+          try {
+            for (let i = 0; i < localStorage.length; i += 1) {
+              const k = localStorage.key(i);
+              if (k && k.startsWith(state[group.legacyPrefix])) keys.push(k);
+            }
+          } catch (_) {}
+        }
+      });
+      return Array.from(new Set(keys.filter(Boolean)));
+    };
+
+    state.openClearDataModal = () => {
+      state.clearDataUncheckAll();
+      state.showClearDataModal.value = true;
+    };
+
+    state.proceedClearDataConfirm = () => {
+      state.showClearDataModal.value = false;
+      state.showClearDataConfirm.value = true;
+      state.clearDataCountdown.value = 3;
+      if (state._clearDataCountdownTimer) clearInterval(state._clearDataCountdownTimer);
+      state._clearDataCountdownTimer = setInterval(() => {
+        if (state.clearDataCountdown.value > 0) state.clearDataCountdown.value -= 1;
+        if (state.clearDataCountdown.value <= 0) {
+          state.clearDataCountdown.value = 0;
+          clearInterval(state._clearDataCountdownTimer);
+          state._clearDataCountdownTimer = null;
+        }
+      }, 1000);
+    };
+
+    state.cancelClearDataConfirm = () => {
+      if (state._clearDataCountdownTimer) { clearInterval(state._clearDataCountdownTimer); state._clearDataCountdownTimer = null; }
+      state.clearDataCountdown.value = 0;
+      state.showClearDataConfirm.value = false;
+      state.showClearDataModal.value = true;
+    };
+
+    state.executeClearData = async () => {
+      if (state.clearDataCountdown.value > 0) return;
+      if (state._clearDataCountdownTimer) { clearInterval(state._clearDataCountdownTimer); state._clearDataCountdownTimer = null; }
+
+      const checked = state.clearDataChecked.value;
+      const syncGroupChecked = checked.sync;
+      const allChecked = state.clearDataGroups.every((g) => checked[g.id]);
+
+      // 同步登录状态被勾选 → 先尝试 logout
+      if (syncGroupChecked && typeof state.logoutSync === "function" && state.syncUser && state.syncUser.value) {
+        try { await state.logoutSync(); } catch (_) {}
+      }
+
+      if (allChecked) {
+        try { localStorage.clear(); } catch (_) {}
+        state.showClearDataConfirm.value = false;
+        location.reload();
+        return;
+      }
+
+      const keysToRemove = state.collectClearDataKeys();
+      for (const key of keysToRemove) {
+        try { localStorage.removeItem(key); } catch (_) {}
+      }
+      state.showClearDataConfirm.value = false;
       location.reload();
     };
 
@@ -204,8 +317,9 @@
     state.marksImportPending = ref(null);
     state.marksImportConfirmCountdown = ref(0);
     state.showMarksImportConfirmModal = ref(false);
-    state.showClearSettingsConfirm = ref(false);
-    state.showClearSiteDataConfirm = ref(false);
+    state.showClearDataModal = ref(false);
+    state.showClearDataConfirm = ref(false);
+    state.clearDataCountdown = ref(0);
     state.showEquipRefiningNavHintDot = ref(false);
     state.showRerunRankingNavHintDot = ref(false);
     state.rerunTimelineZoom = ref(5.0);

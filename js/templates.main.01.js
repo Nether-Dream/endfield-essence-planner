@@ -234,33 +234,15 @@
                 </div>
               </div>
               <div class="secondary-item">
-                <div class="secondary-label">{{ t("storage.reset_settings") }}</div>
-                <button class="secondary-action-btn secondary-action-danger" @click="showClearSettingsConfirm = true; showSecondaryMenu = false">
+                <div class="secondary-label">{{ t("storage.clear_data") }}</div>
+                <button class="secondary-action-btn" @click="openClearDataModal(); showSecondaryMenu = false">
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7">
                     <path d="M3 6h18"></path>
                     <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path>
                     <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path>
                   </svg>
-                  <span class="secondary-action-label">{{ t("storage.reset_settings") }}</span>
+                  <span class="secondary-action-label">{{ t("storage.clear_data") }}</span>
                 </button>
-              </div>
-              <div class="secondary-item secondary-desc">
-                {{ t("storage.reset_settings_desc") }}
-              </div>
-              <div class="secondary-item">
-                <div class="secondary-label">{{ t("storage.clear_site_data") }}</div>
-                <button class="secondary-action-btn secondary-action-danger" @click="showClearSiteDataConfirm = true; showSecondaryMenu = false">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7">
-                    <polyline points="3 6 5 6 21 6"></polyline>
-                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
-                    <line x1="10" y1="11" x2="10" y2="17"></line>
-                    <line x1="14" y1="11" x2="14" y2="17"></line>
-                  </svg>
-                  <span class="secondary-action-label">{{ t("storage.clear_site_data") }}</span>
-                </button>
-              </div>
-              <div class="secondary-item secondary-desc">
-                {{ t("storage.clear_site_data_desc") }}
               </div>
               <div v-if="hasRuntimeWarningHistory" class="secondary-item">
                 <div class="secondary-label">{{ t("error.runtime_warning_history") }}</div>

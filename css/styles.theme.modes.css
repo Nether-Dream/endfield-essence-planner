@@ -357,6 +357,18 @@ html[data-bg-display="off"][data-theme="light"] body::after {
   background: rgba(240, 248, 255, var(--alpha-95));
 }
 
+[data-theme="light"] .clear-data-checkbox-item {
+  color: #e6e9ef;
+}
+
+[data-theme="light"] .clear-data-checkbox-desc {
+  color: #9ba3af;
+}
+
+[data-theme="light"] .clear-data-checkbox-empty {
+  color: #9ba3af;
+}
+
 [data-theme="light"] .plan-config-panel-foot {
   background: linear-gradient(0deg, rgba(var(--color-white-rgb), var(--alpha-95)), rgba(var(--color-white-rgb), var(--alpha-86)) 70%, rgba(var(--color-white-rgb), var(--alpha-00)));
 }

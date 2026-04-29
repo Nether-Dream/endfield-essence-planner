@@ -569,19 +569,40 @@
 
       <transition name="fade-scale">
         <div
-          v-if="showClearSettingsConfirm"
+          v-if="showClearDataModal"
           class="about-overlay"
-          @pointerdown.self="beginOverlayPointerClose('clear-settings-confirm', $event)"
-          @pointerup.self="finishOverlayPointerClose('clear-settings-confirm', () => showClearSettingsConfirm = false, $event)"
-          @pointercancel.self="cancelOverlayPointerClose('clear-settings-confirm')"
+          @pointerdown.self="beginOverlayPointerClose('clear-data-select', $event)"
+          @pointerup.self="finishOverlayPointerClose('clear-data-select', () => showClearDataModal = false, $event)"
+          @pointercancel.self="cancelOverlayPointerClose('clear-data-select')"
         >
           <div class="about-card storage-confirm-card">
-            <h3>{{ t("storage.reset_settings_title") }}</h3>
-            <p class="storage-clear-confirm-warning">{{ t("storage.reset_settings_warning") }}</p>
+            <h3>{{ t("storage.clear_data_title") }}</h3>
+            <div class="clear-data-presets">
+              <button class="clear-data-preset-btn" @click="clearDataPresetDefault">{{ t("storage.preset_default") }}</button>
+              <button class="clear-data-preset-btn" @click="clearDataPresetAll">{{ t("storage.preset_clear_all") }}</button>
+            </div>
+            <div class="clear-data-checkbox-group">
+              <label
+                v-for="group in clearDataGroups"
+                :key="group.id"
+                class="clear-data-checkbox-item"
+                :class="{ 'is-empty': !clearDataGroupHasData(group.id) }"
+                @click.prevent="toggleClearDataGroup(group.id)"
+              >
+                <input type="checkbox" :checked="clearDataChecked[group.id]" :disabled="!clearDataGroupHasData(group.id)" readonly />
+                <span>{{ t(group.label) }}</span>
+                <span v-if="group.desc" class="clear-data-checkbox-desc">{{ t(group.desc) }}</span>
+                <span v-if="!clearDataGroupHasData(group.id)" class="clear-data-checkbox-empty">{{ t("storage.clear_group_no_data") }}</span>
+              </label>
+            </div>
             <div class="about-actions">
-              <button class="ghost-button" @click="showClearSettingsConfirm = false">{{ t("button.cancel") }}</button>
-              <button class="about-button migration-action migration-action-danger" @click="clearAllSettings">
-                {{ t("storage.confirm_reset_settings") }}
+              <button class="ghost-button" @click="showClearDataModal = false">{{ t("button.cancel") }}</button>
+              <button
+                class="about-button migration-action migration-action-danger"
+                :disabled="!clearDataAnyChecked()"
+                @click="proceedClearDataConfirm"
+              >
+                {{ t("storage.next_step") }}
               </button>
             </div>
           </div>
@@ -589,19 +610,30 @@
       </transition>
       <transition name="fade-scale">
         <div
-          v-if="showClearSiteDataConfirm"
+          v-if="showClearDataConfirm"
           class="about-overlay"
-          @pointerdown.self="beginOverlayPointerClose('clear-site-data-confirm', $event)"
-          @pointerup.self="finishOverlayPointerClose('clear-site-data-confirm', () => showClearSiteDataConfirm = false, $event)"
-          @pointercancel.self="cancelOverlayPointerClose('clear-site-data-confirm')"
+          @pointerdown.self="beginOverlayPointerClose('clear-data-confirm', $event)"
+          @pointerup.self="finishOverlayPointerClose('clear-data-confirm', cancelClearDataConfirm, $event)"
+          @pointercancel.self="cancelOverlayPointerClose('clear-data-confirm')"
         >
           <div class="about-card storage-confirm-card">
-            <h3>{{ t("storage.clear_site_data_title") }}</h3>
-            <p class="storage-clear-confirm-warning">{{ t("storage.clear_site_data_warning") }}</p>
+            <h3>{{ t("storage.confirm_clear_title") }}</h3>
+            <p class="storage-clear-confirm-warning">{{ t("storage.confirm_clear_warning") }}</p>
+            <div class="storage-clear-targets" v-if="collectClearDataKeys().length">
+              <div class="storage-clear-target-title">{{ t("storage.the_following_keys_will_be_cleared") }}</div>
+              <ul class="storage-clear-target-list">
+                <li v-for="key in collectClearDataKeys()" :key="key" class="storage-clear-target-item">{{ key }}</li>
+              </ul>
+            </div>
             <div class="about-actions">
-              <button class="ghost-button" @click="showClearSiteDataConfirm = false">{{ t("button.cancel") }}</button>
-              <button class="about-button migration-action migration-action-danger" @click="clearAllSiteData">
-                {{ t("storage.confirm_clear_site_data") }}
+              <button class="ghost-button" @click="cancelClearDataConfirm">{{ t("button.cancel") }}</button>
+              <button
+                class="about-button migration-action migration-action-danger"
+                :disabled="clearDataCountdown > 0"
+                @click="executeClearData"
+              >
+                {{ t("storage.confirm_clear") }}
+                <span v-if="clearDataCountdown > 0">{{ t("storage.countdown_seconds", { count: clearDataCountdown }) }}</span>
               </button>
             </div>
           </div>

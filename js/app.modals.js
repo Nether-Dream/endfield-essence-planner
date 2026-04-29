@@ -203,8 +203,8 @@
           isModalFlagActive(state.showStorageClearConfirmModal) ||
           isModalFlagActive(state.showStorageIgnoreConfirmModal) ||
           isModalFlagActive(state.showMarksImportConfirmModal) ||
-          isModalFlagActive(state.showClearSettingsConfirm) ||
-          isModalFlagActive(state.showClearSiteDataConfirm)
+          isModalFlagActive(state.showClearDataModal) ||
+          isModalFlagActive(state.showClearDataConfirm)
       );
 
     const clearStaleLockCheck = () => {
@@ -305,8 +305,6 @@
       window.addEventListener("focus", handleLifecycleRecovery);
       document.addEventListener("visibilitychange", handleLifecycleRecovery);
       scheduleStaleLockCheck();
-
-      // Removed: tutorial auto-start
     });
 
     watch(
@@ -321,8 +319,8 @@
         state.showStorageClearConfirmModal,
         state.showStorageIgnoreConfirmModal,
         state.showMarksImportConfirmModal,
-        state.showClearSettingsConfirm,
-        state.showClearSiteDataConfirm,
+        state.showClearDataModal,
+        state.showClearDataConfirm,
       ],
       ([
         noticeOpen,
@@ -336,8 +334,8 @@
         storageClearConfirmOpen,
         storageIgnoreConfirmOpen,
         marksImportConfirmOpen,
-        settingsClearOpen,
-        siteDataClearOpen,
+        clearDataSelectOpen,
+        clearDataConfirmOpen,
       ]) => {
         const hasOpenModal = hasActiveModal();
         if (modalUnlockTimer) {
@@ -355,24 +353,6 @@
         }, modalTransitionMs);
       },
       { immediate: true }
-    );
-
-    watch(
-      [
-        state.showNotice,
-        state.showChangelog,
-        state.showAbout,
-        state.showFaq,
-        state.showSyncModal,
-        state.showCnSyncUnavailableModal,
-        state.showDomainWarning,
-        state.showStorageErrorModal,
-        state.showStorageClearConfirmModal,
-        state.showStorageIgnoreConfirmModal,
-        state.showMarksImportConfirmModal,
-        state.showClearSettingsConfirm,
-        state.showClearSiteDataConfirm,
-      ], { immediate: true }
     );
 
     onBeforeUnmount(() => {
