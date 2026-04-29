@@ -579,7 +579,7 @@
             <h3>{{ t("storage.clear_data_title") }}</h3>
             <div class="clear-data-presets">
               <button class="clear-data-preset-btn" @click="clearDataPresetDefault">{{ t("storage.preset_default") }}</button>
-              <button class="clear-data-preset-btn" @click="clearDataPresetAll">{{ t("storage.preset_clear_all") }}</button>
+              <button class="clear-data-preset-btn" @click="clearDataPresetAll">{{ clearDataAllSelected() ? t("storage.preset_uncheck_all") : t("storage.preset_select_all") }}</button>
             </div>
             <div class="clear-data-checkbox-group">
               <label
@@ -595,11 +595,18 @@
                 <span v-if="!clearDataGroupHasData(group.id)" class="clear-data-checkbox-empty">{{ t("storage.clear_group_no_data") }}</span>
               </label>
             </div>
+            <div class="clear-data-nuclear">
+              <label class="clear-data-checkbox-item clear-data-nuclear-item" @click.prevent="clearDataNuclear = !clearDataNuclear">
+                <input type="checkbox" :checked="clearDataNuclear" readonly />
+                <span>{{ t("storage.clear_nuclear") }}</span>
+                <span class="clear-data-checkbox-desc">{{ t("storage.clear_nuclear_desc") }}</span>
+              </label>
+            </div>
             <div class="about-actions">
               <button class="ghost-button" @click="showClearDataModal = false">{{ t("button.cancel") }}</button>
               <button
                 class="about-button migration-action migration-action-danger"
-                :disabled="!clearDataAnyChecked()"
+                :disabled="!clearDataAnyChecked() && !clearDataNuclear"
                 @click="proceedClearDataConfirm"
               >
                 {{ t("storage.next_step") }}
@@ -619,7 +626,18 @@
           <div class="about-card storage-confirm-card">
             <h3>{{ t("storage.confirm_clear_title") }}</h3>
             <p class="storage-clear-confirm-warning">{{ t("storage.confirm_clear_warning") }}</p>
-            <div class="storage-clear-targets" v-if="collectClearDataKeys().length">
+            <div v-if="clearDataNuclear" class="storage-clear-targets">
+              <div class="storage-clear-target-title">{{ t("storage.clear_nuclear") }}</div>
+              <p class="storage-clear-confirm-warning">{{ t("storage.clear_nuclear_confirm_hint") }}</p>
+              <button class="ghost-button clear-data-nuclear-toggle" @click="clearDataNuclearKeysOpen = !clearDataNuclearKeysOpen">
+                {{ t("storage.clear_nuclear_keys_toggle") }}（{{ collectAllLocalStorageKeys().length }}）
+                <span>{{ clearDataNuclearKeysOpen ? "▲" : "▼" }}</span>
+              </button>
+              <ul v-if="clearDataNuclearKeysOpen" class="storage-clear-target-list">
+                <li v-for="key in collectAllLocalStorageKeys()" :key="key" class="storage-clear-target-item">{{ key }}</li>
+              </ul>
+            </div>
+            <div class="storage-clear-targets" v-else-if="collectClearDataKeys().length">
               <div class="storage-clear-target-title">{{ t("storage.the_following_keys_will_be_cleared") }}</div>
               <ul class="storage-clear-target-list">
                 <li v-for="key in collectClearDataKeys()" :key="key" class="storage-clear-target-item">{{ key }}</li>

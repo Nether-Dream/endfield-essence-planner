@@ -856,6 +856,22 @@
         margin-left: auto;
       }
 
+      .clear-data-nuclear {
+        border-top: 1px solid rgba(var(--color-white-rgb), var(--alpha-15));
+        padding-top: 10px;
+        margin-bottom: 14px;
+      }
+
+      .clear-data-nuclear-item {
+        color: #f87171;
+      }
+
+      .clear-data-nuclear-toggle {
+        font-size: 12px;
+        padding: 4px 8px;
+        margin-bottom: 6px;
+      }
+
       /* ===== 极简登录卡片样式 (主题变量适配) ===== */
       
       /* ============================================================

@@ -361,6 +361,10 @@ html[data-bg-display="off"][data-theme="light"] body::after {
   color: #fff;
 }
 
+[data-theme="light"] .clear-data-nuclear-item {
+  color: #f87171;
+}
+
 [data-theme="light"] .clear-data-checkbox-desc {
   color: #6b7280;
 }

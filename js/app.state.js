@@ -97,6 +97,8 @@
 
     // 清除数据 — 勾选分组定义（checked 状态独立存储，避免 Vue template setter 破坏 Ref）
     state.clearDataChecked = ref({});
+    state.clearDataNuclear = ref(false);
+    state.clearDataNuclearKeysOpen = ref(false);
     state.clearDataGroups = [
       {
         id: "marks",
@@ -166,6 +168,10 @@
       const isSame = state.clearDataGroups.every((g) => Boolean(current[g.id]) === Boolean(next[g.id]));
       state.clearDataChecked.value = isSame ? {} : next;
     };
+    state.clearDataAllSelected = () => {
+      const current = state.clearDataChecked.value;
+      return state.clearDataGroups.every((g) => !state.clearDataGroupHasData(g.id) || Boolean(current[g.id]));
+    };
     state.clearDataUncheckAll = () => {
       state.clearDataChecked.value = {};
     };
@@ -188,6 +194,17 @@
         }
       } catch (_) {}
       return false;
+    };
+
+    state.collectAllLocalStorageKeys = () => {
+      const keys = [];
+      try {
+        for (let i = 0; i < localStorage.length; i += 1) {
+          const k = localStorage.key(i);
+          if (k) keys.push(k);
+        }
+      } catch (_) {}
+      return keys.sort();
     };
 
     state.collectClearDataKeys = () => {
@@ -213,6 +230,8 @@
 
     state.openClearDataModal = () => {
       state.clearDataUncheckAll();
+      state.clearDataNuclear.value = false;
+      state.clearDataNuclearKeysOpen.value = false;
       state.showClearDataModal.value = true;
     };
 
@@ -243,24 +262,20 @@
       if (state._clearDataCountdownTimer) { clearInterval(state._clearDataCountdownTimer); state._clearDataCountdownTimer = null; }
 
       const checked = state.clearDataChecked.value;
-      const syncGroupChecked = checked.sync;
-      const allChecked = state.clearDataGroups.every((g) => !state.clearDataGroupHasData(g.id) || checked[g.id]);
+      const syncGroupChecked = checked.sync || state.clearDataNuclear.value;
 
-      // 同步登录状态被勾选 → 先尝试 logout
+      // 同步登录状态被勾选或彻底清理 → 先尝试 logout
       if (syncGroupChecked && typeof state.logoutSync === "function" && state.syncUser && state.syncUser.value) {
         try { await state.logoutSync(); } catch (_) {}
       }
 
-      if (allChecked) {
+      if (state.clearDataNuclear.value) {
         try { localStorage.clear(); } catch (_) {}
-        state.showClearDataConfirm.value = false;
-        location.reload();
-        return;
-      }
-
-      const keysToRemove = state.collectClearDataKeys();
-      for (const key of keysToRemove) {
-        try { localStorage.removeItem(key); } catch (_) {}
+      } else {
+        const keysToRemove = state.collectClearDataKeys();
+        for (const key of keysToRemove) {
+          try { localStorage.removeItem(key); } catch (_) {}
+        }
       }
       state.showClearDataConfirm.value = false;
       location.reload();
