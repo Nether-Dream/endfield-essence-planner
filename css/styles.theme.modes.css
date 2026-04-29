@@ -358,15 +358,15 @@ html[data-bg-display="off"][data-theme="light"] body::after {
 }
 
 [data-theme="light"] .clear-data-checkbox-item {
-  color: #e6e9ef;
+  color: #fff;
 }
 
 [data-theme="light"] .clear-data-checkbox-desc {
-  color: #9ba3af;
+  color: #6b7280;
 }
 
 [data-theme="light"] .clear-data-checkbox-empty {
-  color: #9ba3af;
+  color: #6b7280;
 }
 
 [data-theme="light"] .plan-config-panel-foot {

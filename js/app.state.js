@@ -106,7 +106,7 @@
       {
         id: "planner",
         label: "storage.clear_group_planner",
-        keys: ["uiStateStorageKey"],
+        keys: ["uiStateStorageKey", "weaponAttrOverridesStorageKey"],
       },
       {
         id: "preferences",
@@ -119,7 +119,7 @@
         label: "storage.clear_group_hints",
         keys: ["attrHintStorageKey", "noticeSkipKey", "planConfigHintStorageKey",
                "planConfigOwnershipHintStorageKey", "equipRefiningNavHintStorageKey",
-               "rerunRankingNavHintStorageKey", "weaponOwnershipHintStorageKey", "weaponAttrOverridesStorageKey"],
+               "rerunRankingNavHintStorageKey", "weaponOwnershipHintStorageKey"],
         legacyPrefix: "legacyNoticePrefix",
       },
       {
@@ -148,7 +148,7 @@
     };
 
     state.clearDataPresetDefault = () => {
-      const defaultOn = new Set(["planner", "preferences", "hints", "sync"]);
+      const defaultOn = new Set(["planner", "preferences", "hints"]);
       const next = {};
       state.clearDataGroups.forEach((g) => {
         next[g.id] = defaultOn.has(g.id) && state.clearDataGroupHasData(g.id);
@@ -244,7 +244,7 @@
 
       const checked = state.clearDataChecked.value;
       const syncGroupChecked = checked.sync;
-      const allChecked = state.clearDataGroups.every((g) => checked[g.id]);
+      const allChecked = state.clearDataGroups.every((g) => !state.clearDataGroupHasData(g.id) || checked[g.id]);
 
       // 同步登录状态被勾选 → 先尝试 logout
       if (syncGroupChecked && typeof state.logoutSync === "function" && state.syncUser && state.syncUser.value) {
