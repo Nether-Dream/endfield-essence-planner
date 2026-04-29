@@ -58,7 +58,6 @@
         "./js/app.weapons.js",
         "./js/app.weapon.match.js",
         "./js/app.recommendations.js",
-        "./js/app.tutorial.js",
         "./js/app.recommendations.display.js",
         "./js/app.modals.js",
         "./js/app.update.js",

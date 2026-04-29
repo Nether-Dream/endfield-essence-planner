@@ -1,113 +1,6 @@
 (function () {
   window.__APP_TEMPLATE_MAIN_PARTS = window.__APP_TEMPLATE_MAIN_PARTS || [];
   window.__APP_TEMPLATE_MAIN_PARTS.push(`<transition name="fade-scale">
-          <div v-if="tutorialActive" class="tutorial-float">
-          <div class="tutorial-card">
-            <div class="tutorial-head-row">
-              <div class="tutorial-step">
-                {{ t("tutorial.tutorial_current_total", {
-                  current: tutorialStepIndex + 1,
-                  total: tutorialTotalSteps,
-                }) }}
-              </div>
-              <button
-                v-if="tutorialBodyCanCollapse"
-                class="ghost-button tutorial-collapse"
-                :class="{ 'tutorial-highlight': tutorialCollapseHighlight }"
-                @click="toggleTutorialBody"
-              >
-                {{ tutorialBodyCollapsed ? t("equip_refining.expand_details") : t("equip_refining.collapse_details") }}
-              </button>
-            </div>
-            <h3>{{ tutorialStep.title }}</h3>
-            <p
-              v-for="(line, index) in tutorialVisibleLines"
-              :key="\`tutorial-line-\${index}\`"
-              :class="{
-                'tutorial-line-cut':
-                  tutorialBodyCollapsed &&
-                  isPortrait &&
-                  index === tutorialVisibleLines.length - 1
-              }"
-            >
-              {{ line }}
-            </p>
-            <div class="tutorial-status">
-              <span v-if="tutorialStepReady">{{ t("equip_refining.completed_you_can_continue") }}</span>
-              <span v-else>{{ t("equip_refining.follow_the_prompt_to_complete_this_step") }}</span>
-            </div>
-            <div class="tutorial-actions">
-              <button
-                class="ghost-button"
-                @click="prevTutorialStep"
-                :disabled="tutorialStepIndex === 0"
-              >
-                {{ t("equip_refining.previous") }}
-              </button>
-              <button class="ghost-button" @click="openTutorialSkipConfirm">
-                {{ t("equip_refining.skip_all") }}
-              </button>
-              <button
-                v-if="tutorialStepKey === 'base-pick' && !tutorialStepReady"
-                class="ghost-button"
-                @click="skipTutorialStep"
-              >
-                {{ t("equip_refining.skip_this_step") }}
-              </button>
-              <button
-                class="about-button"
-                @click="nextTutorialStep"
-                :disabled="!tutorialStepReady"
-              >
-                {{
-                  tutorialStepIndex + 1 >= tutorialTotalSteps
-                    ? t("equip_refining.finish")
-                    : t("equip_refining.next")
-                }}
-              </button>
-            </div>
-          </div>
-        </div>
-      </transition>
-
-      <transition name="fade-scale">
-        <div
-          v-if="showTutorialSkipConfirm"
-          class="about-overlay"
-          @pointerdown.self="beginOverlayPointerClose('tutorial-skip-confirm', $event)"
-          @pointerup.self="finishOverlayPointerClose('tutorial-skip-confirm', closeTutorialSkipConfirm, $event)"
-          @pointercancel.self="cancelOverlayPointerClose('tutorial-skip-confirm')"
-        >
-          <div class="about-card tutorial-modal">
-            <h3>{{ t("tutorial.skip_tutorial") }}</h3>
-            <p>{{ t("tutorial.are_you_sure_you_want_to_skip_this_version_s_tutorial_th") }}</p>
-            <p class="tutorial-note">{{ t("equip_refining.you_can_replay_it_later_in_more_settings") }}</p>
-            <div class="about-actions">
-              <button class="ghost-button" @click="closeTutorialSkipConfirm">{{ t("button.cancel") }}</button>
-              <button class="about-button" @click="confirmTutorialSkipAll">
-                {{ t("equip_refining.skip_all") }}
-              </button>
-            </div>
-          </div>
-        </div>
-      </transition>
-
-      <transition name="fade-scale">
-        <div v-if="showTutorialComplete" class="tutorial-float">
-          <div class="tutorial-card tutorial-complete-card">
-            <div class="tutorial-step">{{ t("tutorial.tutorial_complete") }}</div>
-            <h3>{{ t("tutorial.congrats_on_finishing_the_tutorial") }}</h3>
-            <p>{{ t("tutorial.you_ve_completed_this_version_s_tutorial") }}</p>
-            <p>{{ t("tutorial.if_you_think_the_tutorial_needs_improvement_feedback_is_") }}</p>
-            <p class="tutorial-note">{{ t("equip_refining.you_can_replay_it_in_more_settings") }}</p>
-            <div class="tutorial-actions">
-              <button class="about-button" @click="closeTutorialComplete">{{ t("button.got_it") }}</button>
-            </div>
-          </div>
-        </div>
-      </transition>
-
-      <transition name="fade-scale">
         <div v-if="showUnifiedExceptionModal" class="about-overlay storage-error-overlay">
           <div class="about-card storage-error-card">
             <h3>
@@ -673,6 +566,47 @@
           </div>
         </div>
       </div>
+
+      <transition name="fade-scale">
+        <div
+          v-if="showClearSettingsConfirm"
+          class="about-overlay"
+          @pointerdown.self="beginOverlayPointerClose('clear-settings-confirm', $event)"
+          @pointerup.self="finishOverlayPointerClose('clear-settings-confirm', () => showClearSettingsConfirm = false, $event)"
+          @pointercancel.self="cancelOverlayPointerClose('clear-settings-confirm')"
+        >
+          <div class="about-card storage-confirm-card">
+            <h3>{{ t("storage.reset_settings_title") }}</h3>
+            <p class="storage-clear-confirm-warning">{{ t("storage.reset_settings_warning") }}</p>
+            <div class="about-actions">
+              <button class="ghost-button" @click="showClearSettingsConfirm = false">{{ t("button.cancel") }}</button>
+              <button class="about-button migration-action migration-action-danger" @click="clearAllSettings">
+                {{ t("storage.confirm_reset_settings") }}
+              </button>
+            </div>
+          </div>
+        </div>
+      </transition>
+      <transition name="fade-scale">
+        <div
+          v-if="showClearSiteDataConfirm"
+          class="about-overlay"
+          @pointerdown.self="beginOverlayPointerClose('clear-site-data-confirm', $event)"
+          @pointerup.self="finishOverlayPointerClose('clear-site-data-confirm', () => showClearSiteDataConfirm = false, $event)"
+          @pointercancel.self="cancelOverlayPointerClose('clear-site-data-confirm')"
+        >
+          <div class="about-card storage-confirm-card">
+            <h3>{{ t("storage.clear_site_data_title") }}</h3>
+            <p class="storage-clear-confirm-warning">{{ t("storage.clear_site_data_warning") }}</p>
+            <div class="about-actions">
+              <button class="ghost-button" @click="showClearSiteDataConfirm = false">{{ t("button.cancel") }}</button>
+              <button class="about-button migration-action migration-action-danger" @click="clearAllSiteData">
+                {{ t("storage.confirm_clear_site_data") }}
+              </button>
+            </div>
+          </div>
+        </div>
+      </transition>
 
 `);
 })();

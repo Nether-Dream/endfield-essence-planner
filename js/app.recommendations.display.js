@@ -9,18 +9,7 @@
         ? state.effectiveSelectedRegions.value
         : [];
 
-    const reorderForTutorial = (list) => {
-      if (!state.tutorialActive.value || state.tutorialStepKey.value !== "base-pick") {
-        return list;
-      }
-      const target = state.tutorialTargetScheme ? state.tutorialTargetScheme.value : null;
-      if (!target) return list;
-      const targetKey = target.schemeKey;
-      const hasTarget = list.some((scheme) => scheme && scheme.schemeKey === targetKey);
-      if (!hasTarget) return list;
-      const rest = list.filter((scheme) => scheme && scheme.schemeKey !== targetKey);
-      return [target, ...rest];
-    };
+    const reorderForTutorial = (list) => list;
 
     const hasVisibleRows = (scheme) =>
       Boolean(scheme && Array.isArray(scheme.weaponRows) && scheme.weaponRows.length);

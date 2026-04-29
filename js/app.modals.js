@@ -199,11 +199,12 @@
           isModalFlagActive(state.showFaq) ||
           isModalFlagActive(state.showSyncModal) ||
           isModalFlagActive(state.showCnSyncUnavailableModal) ||
-          isModalFlagActive(state.showTutorialSkipConfirm) ||
           isModalFlagActive(state.showStorageErrorModal) ||
           isModalFlagActive(state.showStorageClearConfirmModal) ||
           isModalFlagActive(state.showStorageIgnoreConfirmModal) ||
-          isModalFlagActive(state.showMarksImportConfirmModal)
+          isModalFlagActive(state.showMarksImportConfirmModal) ||
+          isModalFlagActive(state.showClearSettingsConfirm) ||
+          isModalFlagActive(state.showClearSiteDataConfirm)
       );
 
     const clearStaleLockCheck = () => {
@@ -305,9 +306,7 @@
       document.addEventListener("visibilitychange", handleLifecycleRecovery);
       scheduleStaleLockCheck();
 
-      if (typeof state.maybeAutoStartTutorial === "function") {
-        state.maybeAutoStartTutorial();
-      }
+      // Removed: tutorial auto-start
     });
 
     watch(
@@ -318,11 +317,12 @@
         state.showFaq,
         state.showSyncModal,
         state.showCnSyncUnavailableModal,
-        state.showTutorialSkipConfirm,
         state.showStorageErrorModal,
         state.showStorageClearConfirmModal,
         state.showStorageIgnoreConfirmModal,
         state.showMarksImportConfirmModal,
+        state.showClearSettingsConfirm,
+        state.showClearSiteDataConfirm,
       ],
       ([
         noticeOpen,
@@ -336,6 +336,8 @@
         storageClearConfirmOpen,
         storageIgnoreConfirmOpen,
         marksImportConfirmOpen,
+        settingsClearOpen,
+        siteDataClearOpen,
       ]) => {
         const hasOpenModal = hasActiveModal();
         if (modalUnlockTimer) {
@@ -368,13 +370,9 @@
         state.showStorageClearConfirmModal,
         state.showStorageIgnoreConfirmModal,
         state.showMarksImportConfirmModal,
-      ],
-      () => {
-        if (typeof state.maybeAutoStartTutorial === "function") {
-          state.maybeAutoStartTutorial();
-        }
-      },
-      { immediate: true }
+        state.showClearSettingsConfirm,
+        state.showClearSiteDataConfirm,
+      ], { immediate: true }
     );
 
     onBeforeUnmount(() => {

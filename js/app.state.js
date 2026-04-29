@@ -64,7 +64,6 @@
     state.legacyMarksStorageKey = "weapon-marks:v1";
     state.legacyExcludedKey = "excluded-notes:v1";
     state.migrationStorageKey = "weapon-marks-migration:v1";
-    state.tutorialStorageKey = "planner-tutorial:v1";
     state.uiStateStorageKey = "planner-ui-state:v1";
     state.attrHintStorageKey = "planner-attr-hint:v1";
     state.weaponAttrOverridesStorageKey = "weapon-attr-overrides:v1";
@@ -95,6 +94,64 @@
     state.rerunRankingNavHintVersion = "1";
     state.weaponOwnershipHintStorageKey = "planner-weapon-ownership-hint:v1";
     state.weaponOwnershipHintVersion = "1";
+
+    state.clearAllSettings = () => {
+      const persistenceApi = window.AppModules && window.AppModules.persistenceApi;
+      let keys = [];
+      if (persistenceApi && typeof persistenceApi.collectManagedStorageKeys === "function") {
+        keys = persistenceApi.collectManagedStorageKeys();
+      }
+      if (!keys.length) {
+        keys = [
+          state.marksStorageKey,
+          state.legacyMarksStorageKey,
+          state.legacyExcludedKey,
+          state.migrationStorageKey,
+          state.uiStateStorageKey,
+          state.attrHintStorageKey,
+          state.customWeaponsStorageKey,
+          state.editorCharactersStorageKey,
+          state.noticeSkipKey,
+          state.perfModeStorageKey,
+          state.themeModeStorageKey,
+          state.langStorageKey,
+          state.backgroundStorageKey,
+          state.backgroundApiStorageKey,
+          state.backgroundDisplayStorageKey,
+          state.backgroundBlurStorageKey,
+          state.syncMetaStorageKey,
+          state.syncPrefsStorageKey,
+          state.syncDevStorageKey,
+          state.planConfigHintStorageKey,
+          state.equipRefiningNavHintStorageKey,
+          state.rerunRankingNavHintStorageKey,
+          state.weaponOwnershipHintStorageKey,
+          state.weaponAttrOverridesStorageKey,
+        ].filter(Boolean);
+      }
+      try {
+        if (state.legacyNoticePrefix) {
+          for (let i = 0; i < localStorage.length; i += 1) {
+            const key = localStorage.key(i);
+            if (key && key.startsWith(state.legacyNoticePrefix)) {
+              keys.push(key);
+            }
+          }
+        }
+      } catch (_) {}
+      keys = Array.from(new Set(keys));
+      for (const key of keys) {
+        try { localStorage.removeItem(key); } catch (_) {}
+      }
+      state.showClearSettingsConfirm.value = false;
+      location.reload();
+    };
+
+    state.clearAllSiteData = () => {
+      try { localStorage.clear(); } catch (_) {}
+      state.showClearSiteDataConfirm.value = false;
+      location.reload();
+    };
 
     state.lowGpuEnabled = ref(false);
     state.perfPreference = ref("auto");
@@ -147,6 +204,8 @@
     state.marksImportPending = ref(null);
     state.marksImportConfirmCountdown = ref(0);
     state.showMarksImportConfirmModal = ref(false);
+    state.showClearSettingsConfirm = ref(false);
+    state.showClearSiteDataConfirm = ref(false);
     state.showEquipRefiningNavHintDot = ref(false);
     state.showRerunRankingNavHintDot = ref(false);
     state.rerunTimelineZoom = ref(5.0);
@@ -270,14 +329,6 @@
     state.copyCurrentVersionInfo = () => {};
     state.dismissGameCompatWarning = () => {};
 
-    state.tutorialVersion = "1.0.0";
-    state.tutorialActive = ref(false);
-    state.tutorialStepIndex = ref(0);
-    state.tutorialSkippedVersion = ref("");
-    state.tutorialCompletedVersion = ref("");
-    state.showTutorialSkipConfirm = ref(false);
-    state.showTutorialComplete = ref(false);
-
     state.filterS1 = ref([]);
     state.filterS2 = ref([]);
     state.filterS3 = ref([]);
@@ -287,21 +338,7 @@
     state.dropdownOpenS2 = ref(false);
     state.dropdownOpenS3 = ref(false);
 
-    state.tutorialWeaponTarget = ref(null);
-    state.tutorialSchemeTarget = ref(null);
-    state.tutorialPlansTab = ref(null);
-    state.tutorialBodyCollapsed = ref(false);
-    state.tutorialCollapseHighlight = ref(false);
-    state.tutorialCollapseHighlightSeen = ref(false);
-    state.tutorialManualAdvanceHoldIndex = ref(-1);
     state.isPortrait = ref(false);
-
-    state.tutorialTargetWeaponName = "沧溟星梦";
-    state.tutorialTargetDungeonId = "energy";
-    state.tutorialTargetLockType = "s3";
-    state.tutorialTargetLockValue = "附术";
-    state.tutorialGuideWeaponNames = new Set(["白夜新星", "宏愿"]);
-    state.tutorialRequiredBaseKeys = ["主能力提升", "敏捷提升"];
 
     state.formatS1 = formatS1;
   };

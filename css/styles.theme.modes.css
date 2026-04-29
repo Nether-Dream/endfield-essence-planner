@@ -990,7 +990,6 @@ html[data-bg-display="off"][data-theme="light"] body::after {
 }
 
 [data-theme="light"] .about-card,
-[data-theme="light"] .tutorial-card,
 [data-theme="light"] .changelog-card {
   background: rgba(var(--color-white-rgb), var(--alpha-65));
   border-color: rgba(var(--color-black-rgb), var(--alpha-16));
@@ -1110,8 +1109,7 @@ html[data-bg-display="off"][data-theme="light"] body::after {
 [data-theme="light"] .about-card p,
 [data-theme="light"] .notice-card .notice-meta,
 [data-theme="light"] .notice-card .notice-list,
-[data-theme="light"] .notice-card .notice-skip,
-[data-theme="light"] .tutorial-card p {
+[data-theme="light"] .notice-card .notice-skip {
   color: #3f536d;
 }
 

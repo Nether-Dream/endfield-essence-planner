@@ -234,14 +234,33 @@
                 </div>
               </div>
               <div class="secondary-item">
-                <div class="secondary-label">{{ t("tutorial.tutorial") }}</div>
-                <button class="ghost-button" @click="startTutorial(true)">{{ t("nav.try_again") }}</button>
+                <div class="secondary-label">{{ t("storage.reset_settings") }}</div>
+                <button class="secondary-action-btn secondary-action-danger" @click="showClearSettingsConfirm = true; showSecondaryMenu = false">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7">
+                    <path d="M3 6h18"></path>
+                    <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path>
+                    <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path>
+                  </svg>
+                  <span class="secondary-action-label">{{ t("storage.reset_settings") }}</span>
+                </button>
               </div>
               <div class="secondary-item secondary-desc">
-                <label class="notice-skip">
-                  <input type="checkbox" v-model="tutorialSkipAll" />
-                  {{ t("tutorial.don_t_auto_open_this_version_s_tutorial") }}
-                </label>
+                {{ t("storage.reset_settings_desc") }}
+              </div>
+              <div class="secondary-item">
+                <div class="secondary-label">{{ t("storage.clear_site_data") }}</div>
+                <button class="secondary-action-btn secondary-action-danger" @click="showClearSiteDataConfirm = true; showSecondaryMenu = false">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7">
+                    <polyline points="3 6 5 6 21 6"></polyline>
+                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                    <line x1="10" y1="11" x2="10" y2="17"></line>
+                    <line x1="14" y1="11" x2="14" y2="17"></line>
+                  </svg>
+                  <span class="secondary-action-label">{{ t("storage.clear_site_data") }}</span>
+                </button>
+              </div>
+              <div class="secondary-item secondary-desc">
+                {{ t("storage.clear_site_data_desc") }}
               </div>
               <div v-if="hasRuntimeWarningHistory" class="secondary-item">
                 <div class="secondary-label">{{ t("error.runtime_warning_history") }}</div>
@@ -367,15 +386,7 @@
           </button>
           <button
             class="mobile-tab"
-            ref="tutorialPlansTab"
-            :class="{
-              active: mobilePanel === 'plans',
-              'tutorial-highlight':
-                tutorialActive &&
-                tutorialStepKey === 'base-pick' &&
-                isPortrait &&
-                mobilePanel !== 'plans'
-            }"
+            :class="{ active: mobilePanel === 'plans' }"
             @click="mobilePanel = 'plans'"
           >
             {{ t("nav.plans") }} <span class="count">{{ recommendations.length }}</span>
@@ -401,7 +412,6 @@
                 class="ghost-button"
                 :class="{
                   'is-active': showWeaponAttrs,
-                  'tutorial-highlight': tutorialActive && tutorialStepKey === 'show-attrs',
                   'attr-hint-target': showAttrHint
                 }"
                 @click="toggleShowWeaponAttrs"
@@ -639,70 +649,6 @@
           </div>
 
           <div v-else class="weapon-attr-list">
-          <div
-            v-if="tutorialActive && (tutorialStepKey === 'essence-owned' || tutorialStepKey === 'note')"
-            class="scheme-weapon-item weapon-attr-item tutorial-weapon-item"
-            ref="tutorialWeaponTarget"
-          >
-              <div class="scheme-weapon-title">
-<div class="weapon-mini" :class="{ 'rarity-6': tutorialWeapon.rarity === 6, 'rarity-5': tutorialWeapon.rarity === 5, 'rarity-4': tutorialWeapon.rarity === 4 }">
-  <span class="weapon-fallback">{{ tutorialWeapon.rarity }}★</span>
-  <div class="weapon-mini-band"></div>
-</div>
-<span v-if="weaponCharacters(tutorialWeapon).length" class="weapon-avatars">
-  <img
-    v-for="(character, index) in weaponCharacters(tutorialWeapon)"
-    :key="\`\${tutorialWeapon.name}-character-\${index}\`"
-    class="weapon-avatar"
-    v-lazy-src="characterImageSrc(character)"
-    :alt="tTerm('character', character)"
-    loading="lazy"
-    decoding="async"
-    @error="handleCharacterImageError"
-  />
-</span>
-<span class="weapon-name-block">
-  <span class="weapon-main-name">{{ tutorialWeapon.name }}</span>
-  <span class="weapon-type-subtitle">{{ tTerm("type", tutorialWeapon.type) }}</span>
-</span>
-<span class="badge tutorial-badge">{{ t("nav.tutorial") }}</span>
-                <span class="badge muted" v-if="tutorialEssenceOwned">{{ t("nav.essence_owned") }}</span>
-                <span v-if="tutorialWeapon.short" class="weapon-short">
-                  {{ tTerm("short", tutorialWeapon.short) }}
-                </span>
-              </div>
-              <div class="scheme-weapon-attrs">
-                <span class="attr-value">{{ formatS1(tutorialWeapon.s1) }}</span>
-                <span class="attr-value">{{ t(tutorialWeapon.s2) }}</span>
-                <span class="attr-value">{{ t(tutorialWeapon.s3) }}</span>
-              </div>
-              <div class="weapon-exclude-row" @click.stop>
-                <button
-                  class="exclude-toggle small"
-                  :class="{
-                    active: tutorialEssenceOwned,
-                    'intent-alert': !tutorialEssenceOwned,
-                    'tutorial-highlight': tutorialStepKey === 'essence-owned'
-                  }"
-                  @click.stop="toggleTutorialEssenceOwned"
-                >
-                  {{ tutorialEssenceOwned ? t("button.mark_essence_not_owned") : t("button.mark_essence_owned") }}
-                </button>
-                <textarea
-                  class="exclude-note-input"
-                  :class="{
-                    'is-essence-owned': tutorialEssenceOwned,
-                    'tutorial-highlight': tutorialStepKey === 'note'
-                  }"
-                  rows="1"
-                  maxlength="30"
-                  :placeholder="t('warning.note_optional')"
-                  :value="tutorialNote"
-                  @focus="markTutorialNoteTouched(); resizeNoteTextarea($event)"
-                  @input="resizeNoteTextarea($event); updateTutorialNote($event.target.value)"
-                ></textarea>
-              </div>
-            </div>
             <div class="weapon-attr-anchor"></div>
             <div
               v-if="weaponGridTopSpacer > 0"

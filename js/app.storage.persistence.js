@@ -28,7 +28,6 @@
         state.legacyMarksStorageKey,
         state.legacyExcludedKey,
         state.migrationStorageKey,
-        state.tutorialStorageKey,
         state.uiStateStorageKey,
         state.attrHintStorageKey,
         state.customWeaponsStorageKey,
