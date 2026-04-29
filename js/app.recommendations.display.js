@@ -9,19 +9,6 @@
         ? state.effectiveSelectedRegions.value
         : [];
 
-    const reorderForTutorial = (list) => {
-      if (!state.tutorialActive.value || state.tutorialStepKey.value !== "base-pick") {
-        return list;
-      }
-      const target = state.tutorialTargetScheme ? state.tutorialTargetScheme.value : null;
-      if (!target) return list;
-      const targetKey = target.schemeKey;
-      const hasTarget = list.some((scheme) => scheme && scheme.schemeKey === targetKey);
-      if (!hasTarget) return list;
-      const rest = list.filter((scheme) => scheme && scheme.schemeKey !== targetKey);
-      return [target, ...rest];
-    };
-
     const hasVisibleRows = (scheme) =>
       Boolean(scheme && Array.isArray(scheme.weaponRows) && scheme.weaponRows.length);
 
@@ -34,11 +21,11 @@
     };
 
     const displayPrimaryRecommendations = computed(() =>
-      reorderForTutorial(state.primaryRecommendations.value).filter(hasVisibleRows).filter(filterByRegion)
+      state.primaryRecommendations.value.filter(hasVisibleRows).filter(filterByRegion)
     );
 
     const displayExtraRecommendations = computed(() =>
-      reorderForTutorial(state.extraRecommendations.value).filter(hasVisibleRows).filter(filterByRegion)
+      state.extraRecommendations.value.filter(hasVisibleRows).filter(filterByRegion)
     );
 
     const displayRecommendations = computed(() => {

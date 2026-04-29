@@ -51,21 +51,6 @@
               </div>
               <div
                 class="card scheme-card"
-                :class="{
-                  'tutorial-scheme-highlight':
-                    tutorialActive &&
-                    tutorialStepKey === 'base-pick' &&
-                    tutorialTargetSchemeKey &&
-                    card.schemeKey === tutorialTargetSchemeKey,
-                }"
-                :ref="
-                  tutorialActive &&
-                  tutorialStepKey === 'base-pick' &&
-                  tutorialTargetSchemeKey &&
-                  card.schemeKey === tutorialTargetSchemeKey
-                    ? 'tutorialSchemeTarget'
-                    : null
-                "
               >
               <div class="card-header">
                 <div class="card-header-left">
@@ -283,11 +268,7 @@
                     weapon.note,
                     card.baseOverflow,
                     card.lockType,
-                    tutorialActive,
-                    tutorialStepKey,
-                    tutorialTargetSchemeKey,
                     card.schemeKey,
-                    isTutorialGuideWeapon(weapon.name),
                     showWeaponOwnershipInPlans,
                   ]"
                   :class="{
@@ -300,12 +281,6 @@
                     'is-dim': weapon.baseDim || weapon.isEssenceOwned,
                     'is-unowned': weapon.isUnowned,
                     'is-essence-owned': weapon.isEssenceOwned,
-                    'tutorial-highlight':
-                      tutorialActive &&
-                      tutorialStepKey === 'base-pick' &&
-                      tutorialTargetSchemeKey &&
-                      card.schemeKey === tutorialTargetSchemeKey &&
-                      isTutorialGuideWeapon(weapon.name),
                   }"
                   :title="card.baseOverflow ? t('label.click_to_choose_base_attributes') : ''"
                   @click="toggleSchemeBasePick(card, weapon)"

@@ -199,11 +199,12 @@
           isModalFlagActive(state.showFaq) ||
           isModalFlagActive(state.showSyncModal) ||
           isModalFlagActive(state.showCnSyncUnavailableModal) ||
-          isModalFlagActive(state.showTutorialSkipConfirm) ||
           isModalFlagActive(state.showStorageErrorModal) ||
           isModalFlagActive(state.showStorageClearConfirmModal) ||
           isModalFlagActive(state.showStorageIgnoreConfirmModal) ||
-          isModalFlagActive(state.showMarksImportConfirmModal)
+          isModalFlagActive(state.showMarksImportConfirmModal) ||
+          isModalFlagActive(state.showClearDataModal) ||
+          isModalFlagActive(state.showClearDataConfirm)
       );
 
     const clearStaleLockCheck = () => {
@@ -304,10 +305,6 @@
       window.addEventListener("focus", handleLifecycleRecovery);
       document.addEventListener("visibilitychange", handleLifecycleRecovery);
       scheduleStaleLockCheck();
-
-      if (typeof state.maybeAutoStartTutorial === "function") {
-        state.maybeAutoStartTutorial();
-      }
     });
 
     watch(
@@ -318,11 +315,12 @@
         state.showFaq,
         state.showSyncModal,
         state.showCnSyncUnavailableModal,
-        state.showTutorialSkipConfirm,
         state.showStorageErrorModal,
         state.showStorageClearConfirmModal,
         state.showStorageIgnoreConfirmModal,
         state.showMarksImportConfirmModal,
+        state.showClearDataModal,
+        state.showClearDataConfirm,
       ],
       ([
         noticeOpen,
@@ -336,6 +334,8 @@
         storageClearConfirmOpen,
         storageIgnoreConfirmOpen,
         marksImportConfirmOpen,
+        clearDataSelectOpen,
+        clearDataConfirmOpen,
       ]) => {
         const hasOpenModal = hasActiveModal();
         if (modalUnlockTimer) {
@@ -351,28 +351,6 @@
           modalUnlockTimer = null;
           scheduleStaleLockCheck();
         }, modalTransitionMs);
-      },
-      { immediate: true }
-    );
-
-    watch(
-      [
-        state.showNotice,
-        state.showChangelog,
-        state.showAbout,
-        state.showFaq,
-        state.showSyncModal,
-        state.showCnSyncUnavailableModal,
-        state.showDomainWarning,
-        state.showStorageErrorModal,
-        state.showStorageClearConfirmModal,
-        state.showStorageIgnoreConfirmModal,
-        state.showMarksImportConfirmModal,
-      ],
-      () => {
-        if (typeof state.maybeAutoStartTutorial === "function") {
-          state.maybeAutoStartTutorial();
-        }
       },
       { immediate: true }
     );

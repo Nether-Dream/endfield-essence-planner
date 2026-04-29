@@ -29,7 +29,6 @@
 
         --z-index-base: 1;
         --z-index-back-to-top: 1000;
-        --z-index-tutorial: 1100;
         --z-index-update-toast: 2300;
         --z-index-toast: 2400;
         --z-index-modal-mask: 2000;
@@ -794,6 +793,85 @@
         background: rgba(24, 28, 36, var(--alpha-65));
       }
 
+      .clear-data-presets {
+        display: flex;
+        gap: 8px;
+        margin-bottom: 14px;
+      }
+
+      .clear-data-preset-btn {
+        border: 1px solid rgba(var(--color-white-rgb), var(--alpha-25));
+        background: rgba(var(--color-white-rgb), var(--alpha-08));
+        color: #d0d8e8;
+        padding: 6px 14px;
+        border-radius: var(--radius-sm);
+        cursor: pointer;
+        font-size: 13px;
+        transition: all 0.2s ease;
+      }
+
+      .clear-data-preset-btn:hover {
+        border-color: rgba(var(--color-white-rgb), var(--alpha-45));
+        background: rgba(var(--color-white-rgb), var(--alpha-15));
+        color: #fff;
+      }
+
+      .clear-data-checkbox-group {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        margin-bottom: 14px;
+      }
+
+      .clear-data-checkbox-item {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        cursor: pointer;
+        font-size: 14px;
+        color: var(--text);
+      }
+
+      .clear-data-checkbox-item input[type="checkbox"] {
+        accent-color: var(--color-accent, #6ea8fe);
+        width: 16px;
+        height: 16px;
+      }
+
+      .clear-data-checkbox-desc {
+        font-size: 12px;
+        color: var(--text-secondary, #8b95a5);
+        margin-left: -4px;
+      }
+
+      .clear-data-checkbox-item.is-empty {
+        opacity: 0.4;
+        cursor: not-allowed;
+        pointer-events: none;
+      }
+
+      .clear-data-checkbox-empty {
+        font-size: 12px;
+        color: var(--text-secondary, #8b95a5);
+        margin-left: auto;
+      }
+
+      .clear-data-nuclear {
+        border-top: 1px solid rgba(var(--color-white-rgb), var(--alpha-15));
+        padding-top: 10px;
+        margin-bottom: 14px;
+      }
+
+      .clear-data-nuclear-item {
+        color: #f87171;
+      }
+
+      .clear-data-nuclear-toggle {
+        font-size: 12px;
+        padding: 4px 8px;
+        margin-bottom: 6px;
+      }
+
       /* ===== 极简登录卡片样式 (主题变量适配) ===== */
       
       /* ============================================================
@@ -1356,6 +1434,12 @@
       .sync-rights-price-discount {
         font-size: 11px;
         color: var(--accent-2);
+      }
+
+      .sync-rights-price-old {
+        font-size: 12px;
+        color: var(--muted);
+        text-decoration: line-through;
       }
 
       .sync-rights-qr-grid {

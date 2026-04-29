@@ -64,7 +64,6 @@
     state.legacyMarksStorageKey = "weapon-marks:v1";
     state.legacyExcludedKey = "excluded-notes:v1";
     state.migrationStorageKey = "weapon-marks-migration:v1";
-    state.tutorialStorageKey = "planner-tutorial:v1";
     state.uiStateStorageKey = "planner-ui-state:v1";
     state.attrHintStorageKey = "planner-attr-hint:v1";
     state.weaponAttrOverridesStorageKey = "weapon-attr-overrides:v1";
@@ -95,6 +94,192 @@
     state.rerunRankingNavHintVersion = "1";
     state.weaponOwnershipHintStorageKey = "planner-weapon-ownership-hint:v1";
     state.weaponOwnershipHintVersion = "1";
+
+    // 清除数据 — 勾选分组定义（checked 状态独立存储，避免 Vue template setter 破坏 Ref）
+    state.clearDataChecked = ref({});
+    state.clearDataNuclear = ref(false);
+    state.clearDataNuclearKeysOpen = ref(false);
+    state.clearDataGroups = [
+      {
+        id: "marks",
+        label: "storage.clear_group_marks",
+        keys: ["marksStorageKey", "legacyMarksStorageKey", "legacyExcludedKey", "migrationStorageKey"],
+      },
+      {
+        id: "planner",
+        label: "storage.clear_group_planner",
+        keys: ["uiStateStorageKey", "weaponAttrOverridesStorageKey"],
+      },
+      {
+        id: "preferences",
+        label: "storage.clear_group_preferences",
+        keys: ["themeModeStorageKey", "langStorageKey", "backgroundStorageKey",
+               "backgroundApiStorageKey", "backgroundDisplayStorageKey", "backgroundBlurStorageKey", "perfModeStorageKey"],
+      },
+      {
+        id: "hints",
+        label: "storage.clear_group_hints",
+        keys: ["attrHintStorageKey", "noticeSkipKey", "planConfigHintStorageKey",
+               "planConfigOwnershipHintStorageKey", "equipRefiningNavHintStorageKey",
+               "rerunRankingNavHintStorageKey", "weaponOwnershipHintStorageKey"],
+        legacyPrefix: "legacyNoticePrefix",
+      },
+      {
+        id: "sync",
+        label: "storage.clear_group_sync",
+        keys: ["syncMetaStorageKey", "syncPrefsStorageKey", "syncDevStorageKey"],
+      },
+      {
+        id: "customWeapons",
+        label: "storage.clear_group_custom_weapons",
+        keys: ["customWeaponsStorageKey"],
+      },
+      {
+        id: "editorCharacters",
+        label: "storage.clear_group_editor",
+        desc: "storage.clear_group_editor_desc",
+        keys: ["editorCharactersStorageKey"],
+      },
+    ];
+
+    state.toggleClearDataGroup = (groupId) => {
+      if (!state.clearDataGroupHasData(groupId)) return;
+      const checked = state.clearDataChecked.value;
+      checked[groupId] = !checked[groupId];
+      state.clearDataChecked.value = { ...checked };
+    };
+
+    state.clearDataPresetDefault = () => {
+      const defaultOn = new Set(["planner", "preferences", "hints"]);
+      const next = {};
+      state.clearDataGroups.forEach((g) => {
+        next[g.id] = defaultOn.has(g.id) && state.clearDataGroupHasData(g.id);
+      });
+      const current = state.clearDataChecked.value;
+      const isSame = state.clearDataGroups.every((g) => Boolean(current[g.id]) === Boolean(next[g.id]));
+      state.clearDataChecked.value = isSame ? {} : next;
+    };
+    state.clearDataPresetAll = () => {
+      const next = {};
+      state.clearDataGroups.forEach((g) => {
+        next[g.id] = state.clearDataGroupHasData(g.id);
+      });
+      const current = state.clearDataChecked.value;
+      const isSame = state.clearDataGroups.every((g) => Boolean(current[g.id]) === Boolean(next[g.id]));
+      state.clearDataChecked.value = isSame ? {} : next;
+    };
+    state.clearDataAllSelected = () => {
+      const current = state.clearDataChecked.value;
+      return state.clearDataGroups.every((g) => !state.clearDataGroupHasData(g.id) || Boolean(current[g.id]));
+    };
+    state.clearDataUncheckAll = () => {
+      state.clearDataChecked.value = {};
+    };
+
+    state.clearDataAnyChecked = () => Object.values(state.clearDataChecked.value).some(Boolean);
+
+    state.clearDataGroupHasData = (groupId) => {
+      const group = state.clearDataGroups.find((g) => g.id === groupId);
+      if (!group) return false;
+      try {
+        for (const keyName of group.keys) {
+          const key = state[keyName];
+          if (key && localStorage.getItem(key) !== null) return true;
+        }
+        if (group.legacyPrefix && state[group.legacyPrefix]) {
+          for (let i = 0; i < localStorage.length; i += 1) {
+            const k = localStorage.key(i);
+            if (k && k.startsWith(state[group.legacyPrefix])) return true;
+          }
+        }
+      } catch (_) {}
+      return false;
+    };
+
+    state.collectAllLocalStorageKeys = () => {
+      const keys = [];
+      try {
+        for (let i = 0; i < localStorage.length; i += 1) {
+          const k = localStorage.key(i);
+          if (k) keys.push(k);
+        }
+      } catch (_) {}
+      return keys.sort();
+    };
+
+    state.collectClearDataKeys = () => {
+      const checked = state.clearDataChecked.value;
+      const keys = [];
+      state.clearDataGroups.forEach((group) => {
+        if (!checked[group.id]) return;
+        group.keys.forEach((keyName) => {
+          const key = state[keyName];
+          if (key) keys.push(key);
+        });
+        if (group.legacyPrefix && state[group.legacyPrefix]) {
+          try {
+            for (let i = 0; i < localStorage.length; i += 1) {
+              const k = localStorage.key(i);
+              if (k && k.startsWith(state[group.legacyPrefix])) keys.push(k);
+            }
+          } catch (_) {}
+        }
+      });
+      return Array.from(new Set(keys.filter(Boolean)));
+    };
+
+    state.openClearDataModal = () => {
+      state.clearDataUncheckAll();
+      state.clearDataNuclear.value = false;
+      state.clearDataNuclearKeysOpen.value = false;
+      state.showClearDataModal.value = true;
+    };
+
+    state.proceedClearDataConfirm = () => {
+      state.showClearDataModal.value = false;
+      state.showClearDataConfirm.value = true;
+      state.clearDataCountdown.value = 3;
+      if (state._clearDataCountdownTimer) clearInterval(state._clearDataCountdownTimer);
+      state._clearDataCountdownTimer = setInterval(() => {
+        if (state.clearDataCountdown.value > 0) state.clearDataCountdown.value -= 1;
+        if (state.clearDataCountdown.value <= 0) {
+          state.clearDataCountdown.value = 0;
+          clearInterval(state._clearDataCountdownTimer);
+          state._clearDataCountdownTimer = null;
+        }
+      }, 1000);
+    };
+
+    state.cancelClearDataConfirm = () => {
+      if (state._clearDataCountdownTimer) { clearInterval(state._clearDataCountdownTimer); state._clearDataCountdownTimer = null; }
+      state.clearDataCountdown.value = 0;
+      state.showClearDataConfirm.value = false;
+      state.showClearDataModal.value = true;
+    };
+
+    state.executeClearData = async () => {
+      if (state.clearDataCountdown.value > 0) return;
+      if (state._clearDataCountdownTimer) { clearInterval(state._clearDataCountdownTimer); state._clearDataCountdownTimer = null; }
+
+      const checked = state.clearDataChecked.value;
+      const syncGroupChecked = checked.sync || state.clearDataNuclear.value;
+
+      // 同步登录状态被勾选或彻底清理 → 先尝试 logout
+      if (syncGroupChecked && typeof state.logoutSync === "function" && state.syncUser && state.syncUser.value) {
+        try { await state.logoutSync(); } catch (_) {}
+      }
+
+      if (state.clearDataNuclear.value) {
+        try { localStorage.clear(); } catch (_) {}
+      } else {
+        const keysToRemove = state.collectClearDataKeys();
+        for (const key of keysToRemove) {
+          try { localStorage.removeItem(key); } catch (_) {}
+        }
+      }
+      state.showClearDataConfirm.value = false;
+      location.reload();
+    };
 
     state.lowGpuEnabled = ref(false);
     state.perfPreference = ref("auto");
@@ -147,6 +332,9 @@
     state.marksImportPending = ref(null);
     state.marksImportConfirmCountdown = ref(0);
     state.showMarksImportConfirmModal = ref(false);
+    state.showClearDataModal = ref(false);
+    state.showClearDataConfirm = ref(false);
+    state.clearDataCountdown = ref(0);
     state.showEquipRefiningNavHintDot = ref(false);
     state.showRerunRankingNavHintDot = ref(false);
     state.rerunTimelineZoom = ref(5.0);
@@ -270,14 +458,6 @@
     state.copyCurrentVersionInfo = () => {};
     state.dismissGameCompatWarning = () => {};
 
-    state.tutorialVersion = "1.0.0";
-    state.tutorialActive = ref(false);
-    state.tutorialStepIndex = ref(0);
-    state.tutorialSkippedVersion = ref("");
-    state.tutorialCompletedVersion = ref("");
-    state.showTutorialSkipConfirm = ref(false);
-    state.showTutorialComplete = ref(false);
-
     state.filterS1 = ref([]);
     state.filterS2 = ref([]);
     state.filterS3 = ref([]);
@@ -287,21 +467,7 @@
     state.dropdownOpenS2 = ref(false);
     state.dropdownOpenS3 = ref(false);
 
-    state.tutorialWeaponTarget = ref(null);
-    state.tutorialSchemeTarget = ref(null);
-    state.tutorialPlansTab = ref(null);
-    state.tutorialBodyCollapsed = ref(false);
-    state.tutorialCollapseHighlight = ref(false);
-    state.tutorialCollapseHighlightSeen = ref(false);
-    state.tutorialManualAdvanceHoldIndex = ref(-1);
     state.isPortrait = ref(false);
-
-    state.tutorialTargetWeaponName = "沧溟星梦";
-    state.tutorialTargetDungeonId = "energy";
-    state.tutorialTargetLockType = "s3";
-    state.tutorialTargetLockValue = "附术";
-    state.tutorialGuideWeaponNames = new Set(["白夜新星", "宏愿"]);
-    state.tutorialRequiredBaseKeys = ["主能力提升", "敏捷提升"];
 
     state.formatS1 = formatS1;
   };

@@ -572,29 +572,6 @@
     }
 
     try {
-      const storedTutorial = localStorage.getItem(state.tutorialStorageKey);
-      if (storedTutorial) {
-        const parsed = JSON.parse(storedTutorial);
-        if (parsed && typeof parsed === "object") {
-          if (typeof parsed.skipVersion === "string") {
-            state.tutorialSkippedVersion.value = parsed.skipVersion;
-          } else if (parsed.skipAll) {
-            state.tutorialSkippedVersion.value = state.tutorialVersion;
-          }
-          if (typeof parsed.completedVersion === "string") {
-            state.tutorialCompletedVersion.value = parsed.completedVersion;
-          } else if (parsed.completed) {
-            state.tutorialCompletedVersion.value = state.tutorialVersion;
-          }
-        }
-      }
-    } catch (error) {
-      recoveryApi.reportStorageIssue("storage.read", state.tutorialStorageKey, error, {
-        scope: "restore-tutorial",
-      });
-    }
-
-    try {
       const storedMarks = localStorage.getItem(state.marksStorageKey);
       if (storedMarks) {
         const parsed = JSON.parse(storedMarks);

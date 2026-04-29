@@ -357,6 +357,22 @@ html[data-bg-display="off"][data-theme="light"] body::after {
   background: rgba(240, 248, 255, var(--alpha-95));
 }
 
+[data-theme="light"] .clear-data-checkbox-item {
+  color: #fff;
+}
+
+[data-theme="light"] .clear-data-nuclear-item {
+  color: #f87171;
+}
+
+[data-theme="light"] .clear-data-checkbox-desc {
+  color: #6b7280;
+}
+
+[data-theme="light"] .clear-data-checkbox-empty {
+  color: #6b7280;
+}
+
 [data-theme="light"] .plan-config-panel-foot {
   background: linear-gradient(0deg, rgba(var(--color-white-rgb), var(--alpha-95)), rgba(var(--color-white-rgb), var(--alpha-86)) 70%, rgba(var(--color-white-rgb), var(--alpha-00)));
 }
@@ -990,7 +1006,6 @@ html[data-bg-display="off"][data-theme="light"] body::after {
 }
 
 [data-theme="light"] .about-card,
-[data-theme="light"] .tutorial-card,
 [data-theme="light"] .changelog-card {
   background: rgba(var(--color-white-rgb), var(--alpha-65));
   border-color: rgba(var(--color-black-rgb), var(--alpha-16));
@@ -1110,8 +1125,7 @@ html[data-bg-display="off"][data-theme="light"] body::after {
 [data-theme="light"] .about-card p,
 [data-theme="light"] .notice-card .notice-meta,
 [data-theme="light"] .notice-card .notice-list,
-[data-theme="light"] .notice-card .notice-skip,
-[data-theme="light"] .tutorial-card p {
+[data-theme="light"] .notice-card .notice-skip {
   color: #3f536d;
 }
 

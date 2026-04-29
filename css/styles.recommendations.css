@@ -609,7 +609,6 @@
         text-shadow: none !important;
       }
 
-      html.low-gpu .tutorial-highlight,
       html.low-gpu .back-to-top,
       html.low-gpu .about-button,
       html.low-gpu .ghost-button {
