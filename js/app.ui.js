@@ -10,6 +10,7 @@
     const showPlanConfig = state.showPlanConfig;
     const showPlanConfigHintDot = state.showPlanConfigHintDot;
     const showEquipRefiningNavHintDot = state.showEquipRefiningNavHintDot;
+    const showCharacterGuideNavHintDot = state.showCharacterGuideNavHintDot;
     const showRerunRankingNavHintDot = state.showRerunRankingNavHintDot;
     const isPortrait = state.isPortrait;
     const updateLangMenuPlacement = state.updateLangMenuPlacement;
@@ -1149,6 +1150,20 @@
         });
       }
     };
+    const markCharacterGuideNavHintSeen = () => {
+      if (!showCharacterGuideNavHintDot.value) return;
+      showCharacterGuideNavHintDot.value = false;
+      try {
+        localStorage.setItem(
+          state.characterGuideNavHintStorageKey,
+          state.characterGuideNavHintVersion
+        );
+      } catch (error) {
+        reportStorageIssue("storage.write", state.characterGuideNavHintStorageKey, error, {
+          scope: "ui.character-guide-nav-hint-write",
+        });
+      }
+    };
     const markRerunRankingNavHintSeen = () => {
       if (!showRerunRankingNavHintDot.value) return;
       showRerunRankingNavHintDot.value = false;
@@ -1430,6 +1445,7 @@
     state.isPlanConfigSectionCollapsed = isPlanConfigSectionCollapsed;
     state.togglePlanConfigSectionCollapsed = togglePlanConfigSectionCollapsed;
     state.markEquipRefiningNavHintSeen = markEquipRefiningNavHintSeen;
+    state.markCharacterGuideNavHintSeen = markCharacterGuideNavHintSeen;
     state.markRerunRankingNavHintSeen = markRerunRankingNavHintSeen;
     state.dismissRuntimeWarning = dismissRuntimeWarning;
     state.ignoreRuntimeWarnings = ignoreRuntimeWarnings;

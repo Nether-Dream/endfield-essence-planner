@@ -1636,6 +1636,12 @@ return { view: "planner" };
         currentView: state.currentView,
         setView: (view) => {
           if (
+            view === "strategy" &&
+            typeof state.markCharacterGuideNavHintSeen === "function"
+          ) {
+            state.markCharacterGuideNavHintSeen();
+          }
+          if (
             view === "equip-refining" &&
             typeof state.markEquipRefiningNavHintSeen === "function"
           ) {
@@ -1717,6 +1723,7 @@ return { view: "planner" };
         confirmMarksImport: state.confirmMarksImport,
         formatSourceInfo,
         showEquipRefiningNavHintDot: state.showEquipRefiningNavHintDot,
+        showCharacterGuideNavHintDot: state.showCharacterGuideNavHintDot,
 
 
         showRerunRankingNavHintDot: state.showRerunRankingNavHintDot,
@@ -2168,6 +2175,10 @@ return { view: "planner" };
         customBackgroundApi: state.customBackgroundApi,
         backgroundDisplayEnabled: state.backgroundDisplayEnabled,
         backgroundBlurEnabled: state.backgroundBlurEnabled,
+        backgroundUiHidden: state.backgroundUiHidden,
+        toggleBackgroundUi() {
+          state.backgroundUiHidden.value = !state.backgroundUiHidden.value;
+        },
         toggleBackgroundDisplayEnabled: state.toggleBackgroundDisplayEnabled,
         toggleBackgroundBlurEnabled: state.toggleBackgroundBlurEnabled,
         handleBackgroundFile: state.handleBackgroundFile,

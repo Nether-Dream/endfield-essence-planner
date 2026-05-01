@@ -555,6 +555,18 @@
       });
     }
     try {
+      const storedCharacterGuideNavHintVersion = localStorage.getItem(
+        state.characterGuideNavHintStorageKey
+      );
+      state.showCharacterGuideNavHintDot.value =
+        storedCharacterGuideNavHintVersion !== state.characterGuideNavHintVersion;
+    } catch (error) {
+      state.showCharacterGuideNavHintDot.value = true;
+      recoveryApi.reportStorageIssue("storage.read", state.characterGuideNavHintStorageKey, error, {
+        scope: "restore-character-guide-nav-hint",
+      });
+    }
+    try {
       const storedRerunRankingNavHintVersion = localStorage.getItem(
         state.rerunRankingNavHintStorageKey
       );

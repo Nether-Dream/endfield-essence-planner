@@ -267,11 +267,16 @@
           >
             {{ t("nav.essence_planner") }}
           </button>
-          <button 
-            class="nav-item" 
-            :class="{ active: currentView === 'strategy' }" 
+          <button
+            class="nav-item"
+            :class="{ active: currentView === 'strategy' }"
             @click="setView('strategy')"
           >
+            <span
+              v-if="showCharacterGuideNavHintDot"
+              class="nav-hint-dot"
+              aria-hidden="true"
+            >NEW</span>
             {{ t("nav.character_guide") }}
           </button>
           <button 

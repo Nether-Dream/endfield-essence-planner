@@ -2883,6 +2883,55 @@
         min-height: clamp(320px, 60vh, 720px);
       }
 
+      .background-hint-text {
+        position: fixed;
+        bottom: 24px;
+        left: 50%;
+        transform: translateX(-50%);
+        z-index: 100;
+        padding: 5px 16px;
+        border-radius: 999px;
+        background: rgba(var(--color-black-rgb), var(--alpha-50));
+        color: rgba(var(--color-white-rgb), var(--alpha-70));
+        font-size: 12px;
+        font-weight: 500;
+        backdrop-filter: blur(6px);
+        white-space: nowrap;
+        pointer-events: none;
+      }
+
+      #app {
+        transition: opacity 0.35s ease;
+      }
+
+      html[data-bg-ui-hidden="1"] #app {
+        opacity: 0 !important;
+        pointer-events: none !important;
+      }
+
+      body::after {
+        transition: opacity 0.35s ease;
+      }
+
+      html[data-bg-ui-hidden="1"] body::after {
+        opacity: 0 !important;
+      }
+
+      .background-ui-overlay {
+        position: fixed;
+        inset: 0;
+        z-index: 9999;
+        cursor: pointer;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.35s ease;
+      }
+
+      .background-ui-overlay.is-visible {
+        opacity: 1;
+        pointer-events: auto;
+      }
+
       .view-shell {
         grid-column: 1 / -1;
         width: 100%;
@@ -2920,6 +2969,30 @@
       .strategy-view.is-guide-animating {
         overflow: hidden;
         will-change: height;
+      }
+
+      .strategy-editor-notice {
+        display: table;
+        margin: 0 auto 12px;
+        padding: 5px 10px;
+        border-radius: var(--radius-sm);
+        background: rgba(var(--color-info-rgb), var(--alpha-10));
+        border: 1px solid rgba(var(--color-info-rgb), var(--alpha-28));
+        font-size: 13px;
+        line-height: 1.5;
+        color: var(--text-secondary);
+      }
+
+      .strategy-editor-notice-link {
+        color: rgba(var(--color-info-rgb), var(--alpha-90));
+        font-weight: 600;
+        text-decoration: underline;
+        text-underline-offset: 2px;
+        white-space: nowrap;
+      }
+
+      .strategy-editor-notice-link:hover {
+        color: rgba(var(--color-info-rgb), 1);
       }
 
       .match-view {

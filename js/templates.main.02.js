@@ -406,6 +406,14 @@
             </button>
             </div>
             <template v-else>
+            <div class="strategy-editor-notice">
+              <span>{{ t("guide.editor_open_notice") }}</span><a
+                class="strategy-editor-notice-link"
+                href="https://www.bilibili.com/video/BV1NhRMBiEgi/"
+                target="_blank"
+                rel="noreferrer noopener"
+              >{{ t("guide.editor_open_video_link") }}</a>
+            </div>
             <transition name="guide-switch" mode="out-in" @before-leave="guideBeforeLeave" @enter="guideEnter">
               <div v-if="!selectedCharacterId" key="guide-list" class="character-list">
              <div class="panel-title">

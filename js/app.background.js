@@ -361,6 +361,38 @@
       }
     );
 
+    let uiOverlay = null;
+
+    const getOrCreateUiOverlay = () => {
+      if (!uiOverlay) {
+        uiOverlay = document.createElement("div");
+        uiOverlay.className = "background-ui-overlay";
+        uiOverlay.addEventListener("click", () => {
+          state.backgroundUiHidden.value = false;
+        });
+        document.body.appendChild(uiOverlay);
+      }
+      return uiOverlay;
+    };
+
+    watch(
+      () => state.backgroundUiHidden.value,
+      (value) => {
+        if (value) {
+          root.setAttribute("data-bg-ui-hidden", "1");
+          const overlay = getOrCreateUiOverlay();
+          requestAnimationFrame(() => {
+            overlay.classList.add("is-visible");
+          });
+        } else {
+          root.removeAttribute("data-bg-ui-hidden");
+          if (uiOverlay) {
+            uiOverlay.classList.remove("is-visible");
+          }
+        }
+      }
+    );
+
     onMounted(() => {
       mounted = true;
       applyBackground();
@@ -371,6 +403,11 @@
         clearFadeTimer();
         if (root) {
           root.removeAttribute("data-bg-display");
+          root.removeAttribute("data-bg-ui-hidden");
+        }
+        if (uiOverlay && uiOverlay.parentNode) {
+          uiOverlay.parentNode.removeChild(uiOverlay);
+          uiOverlay = null;
         }
       });
     }

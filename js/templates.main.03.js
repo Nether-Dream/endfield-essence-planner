@@ -403,8 +403,11 @@
       class="background-view"
       role="region"
       :aria-label="t('nav.background_view')"
+      @click="toggleBackgroundUi"
     ></div>
   </transition>
+
+  <span v-if="currentView === 'background' && !backgroundUiHidden" class="background-hint-text">{{ t("nav.background_click_hint") }}</span>
 
       <transition name="fade-scale">
         <div

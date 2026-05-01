@@ -86,6 +86,9 @@
     state.planConfigHintVersion = "7";
     state.planConfigOwnershipHintStorageKey = "planner-plan-config-ownership-hint:v1";
     state.planConfigOwnershipHintVersion = "2";
+    state.characterGuideNavHintStorageKey = "planner-character-guide-nav-hint:v1";
+    // 更新角色攻略导航提示时递增该版本号，可让红点对所有用户重新显示一次。
+    state.characterGuideNavHintVersion = "1";
     state.equipRefiningNavHintStorageKey = "planner-equip-refining-nav-hint:v1";
     // 更新装备精锻导航提示时递增该版本号，可让红点对所有用户重新显示一次。
     state.equipRefiningNavHintVersion = "1";
@@ -293,6 +296,7 @@
     state.customBackgroundApi = ref("");
     state.backgroundDisplayEnabled = ref(true);
     state.backgroundBlurEnabled = ref(true);
+    state.backgroundUiHidden = ref(false);
 
     state.showNotice = ref(false);
     state.showChangelog = ref(false);
@@ -336,6 +340,7 @@
     state.showClearDataConfirm = ref(false);
     state.clearDataCountdown = ref(0);
     state.showEquipRefiningNavHintDot = ref(false);
+    state.showCharacterGuideNavHintDot = ref(false);
     state.showRerunRankingNavHintDot = ref(false);
     state.rerunTimelineZoom = ref(5.0);
     state.rerunTimelineShowPreviewAxis = ref(true);
