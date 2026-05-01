@@ -767,8 +767,8 @@
                   maxlength="30"
                   :placeholder="t('warning.note_optional')"
                   :value="getWeaponNote(weapon.name)"
-                  @focus="resizeNoteTextarea($event)"
-                  @input="resizeNoteTextarea($event); updateWeaponNote(weapon, $event.target.value)"
+                  @focus="() => {}"
+                  @input="updateWeaponNote(weapon, $event.target.value)"
                 ></textarea>
               </div>
             </div>
@@ -1051,8 +1051,8 @@
                       maxlength="30"
                       :placeholder="t('warning.note_optional')"
                       :value="getWeaponNote(weapon.name)"
-                      @focus="resizeNoteTextarea($event)"
-                      @input="resizeNoteTextarea($event); updateWeaponNote(weapon, $event.target.value)"
+                      @focus="() => {}"
+                      @input="updateWeaponNote(weapon, $event.target.value)"
                     ></textarea>
                   </div>
 `);

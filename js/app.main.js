@@ -1234,7 +1234,11 @@ return { view: "planner" };
         target.style.height = `${nextHeight}px`;
         target.style.overflowY = contentHeight > maxHeight ? "auto" : "hidden";
       };
-
+      // Expose globally to guarantee template can call it, regardless of template cache
+      if (typeof window !== "undefined") {
+        window.resizeNoteTextarea = resizeNoteTextarea;
+      }
+ 
       const notePopoverKey = ref(null);
       const toggleNotePopover = (weaponName) => {
         notePopoverKey.value = notePopoverKey.value === weaponName ? null : weaponName;

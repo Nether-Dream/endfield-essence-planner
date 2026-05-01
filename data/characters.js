@@ -1,13 +1,19 @@
 (function () {
   window.characters = window.characters || [];
-  const scripts = window.__APP_CHARACTER_SCRIPTS__ || [];
-  const tangtangScript = "./data/characters/tangtang.js";
-  if (!scripts.includes(tangtangScript)) {
-    scripts.push(tangtangScript);
-  }
-  const rossiScript = "./data/characters/rossi.js";
-  if (!scripts.includes(rossiScript)) {
-    scripts.push(rossiScript);
-  }
+  var scripts = window.__APP_CHARACTER_SCRIPTS__ || [];
+
+  // 添加新角色只需在这里加一行 ID
+  var characterIds = [
+    "tangtang",
+    "rossi"
+  ];
+
+  characterIds.forEach(function (id) {
+    var path = "./data/characters/" + id + ".js";
+    if (scripts.indexOf(path) === -1) {
+      scripts.push(path);
+    }
+  });
+
   window.__APP_CHARACTER_SCRIPTS__ = scripts;
 })();
