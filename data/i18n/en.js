@@ -118,7 +118,7 @@ window.I18N["en"] = {
     },
     "s2": {
       "攻击提升": "Attack Boost",
-      "终结技效率提升": "Ultimate Gain Boost",
+      "终结技充能效率提升": "Ultimate Gain Boost",
       "自然伤害提升": "Nature DMG Boost",
       "源石技艺提升": "Arts Intensity Boost",
       "暴击率提升": "Critical Rate Boost",
