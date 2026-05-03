@@ -164,9 +164,9 @@ window.I18N["en"] = {
       "武陵": "Wuling",
       "武陵·武陵城": "Wuling - Wuling City",
       "武陵·清波寨": "Wuling - Qingbo Stockade",
-      "武陵·首墩": "Wuling - Shoudun"
+      "武陵·首墩": "Wuling - Marker Stone"
     },
-    "weapon": {
+    "weapon": { // Todo: Reorganize it
       "不知归": "Never Rest",
       "热熔切割器": "Thermite Cutter",
       "使命必达": "Delivery Guaranteed",
@@ -226,39 +226,51 @@ window.I18N["en"] = {
       "浪潮": "Wave Tide"
     },
     "character": {
-      "伊冯": "Yvonne",
-      "余烬": "Ember",
+      // Initiate
+      "管理员(女)": "Endministrator (Female)",
+      "管理员(男)": "Endministrator (Male)",
+
       "佩丽卡": "Perlica",
-      "别礼": "Last Rite",
+      "陈千语": "Chen Qianyu",
+      "狼卫": "Wulfgard",
+      "艾维文娜": "Avywenna",
       "大潘": "Da Pan",
       "弧光": "Arclight",
       "昼雪": "Snowshine",
-      "洁尔佩塔": "Gilberta",
-      "狼卫": "Wulfgard",
-      "管理员(女)": "Endministrator (Female)",
-      "管理员(男)": "Endministrator (Male)",
-      "艾尔黛拉": "Ardelia",
-      "艾维文娜": "Avywenna",
-      "莱万汀": "Laevatain",
       "赛希": "Xaihi",
-      "陈千语": "Chen Qianyu",
+
+      "艾尔黛拉": "Ardelia",
       "骏卫": "Pogranichnik",
-      "黎风": "Lifeng"
+      "别礼": "Last Rite",
+      "黎风": "Lifeng",
+      "余烬": "Ember",
+      // 1.0
+      "莱万汀": "Laevatain",
+      "洁尔佩塔": "Gilberta",
+      "伊冯": "Yvonne",
+      // 1.1
+      "汤汤": "Tangtang",
+      "洛茜": "Rossi",
+      // 1.2
+      "庄方宜": "Zhuang Fangyi"
     },
     "short": {
-      "骏卫专武": "Pogranichnik Signature",
+      // Signature
+      "管理员专武": "Endministrator Signature", // Grand Vision
+      "骏卫专武": "Pogranichnik Signature", // Never Rest
+      "别礼专武": "Last Rite Signature", // Kravengger
+      "黎风专武": "Lifeng Signature", // Mountain Bearer
+      "伊冯专武": "Yvonne Signature", // Artzy Tyrannical
+      "艾尔黛拉专武": "Ardelia Signature", // Dreams of the Starry Beach
+      "余烬专武": "Ember Signature", // Thunderberge
+      "莱万汀专武": "Laevatain Signature", // Forgeborn Scathe
+      // Compatible
+      "艾维文娜适配": "Avywenna Compatible", // Cohesive Traction
+      // General
       "泛用最强拐": "Best General Support",
       "泛用最强拐·易伤": "Best General Support · Vulnerability",
-      "别礼专武": "Last Rite Signature",
-      "艾维文娜适配": "Avywenna Compatible",
-      "管理员专武": "Endministrator Signature",
-      "伊冯专武": "Yvonne Signature",
       "泛用/伊冯下位": "General / Yvonne Lower-tier",
-      "黎风专武": "Lifeng Signature",
-      "莱万汀下位": "Laevatain Lower-tier",
-      "艾尔黛拉专武": "Ardelia Signature",
-      "余烬专武": "Ember Signature",
-      "莱万汀专武": "Laevatain Signature"
+      "莱万汀下位": "Laevatain Lower-tier"
     },
     "misc": {
       "任意": "Any",
