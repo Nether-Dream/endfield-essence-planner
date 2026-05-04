@@ -5,7 +5,8 @@
   // 添加新角色只需在这里加一行 ID
   var characterIds = [
     "tangtang",
-    "rossi"
+    "rossi",
+    "lifeng"
   ];
 
   characterIds.forEach(function (id) {
