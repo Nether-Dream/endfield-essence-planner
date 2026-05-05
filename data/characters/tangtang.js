@@ -596,23 +596,429 @@
       ]
     },
     "guide": {
-      "equipRows": [],
-      "analysis": "暂无",
-      "teamTips": "暂无",
-      "operationTips": "暂无",
-      "teamSlots": [],
+      "equipRows": [
+        {
+          "weapons": [
+            {
+              "name": "落草",
+              "icon": "",
+              "note": "专武",
+              "rarity": 6
+            }
+          ],
+          "equipment": [
+            {
+              "name": "清波重甲",
+              "icon": "",
+              "note": "",
+              "rarity": 5
+            },
+            {
+              "name": "清波手甲",
+              "icon": "",
+              "note": "",
+              "rarity": 5
+            },
+            {
+              "name": "清波定位仪",
+              "icon": "",
+              "note": "",
+              "rarity": 5
+            },
+            {
+              "name": "生物辅助护板",
+              "icon": "",
+              "note": "",
+              "rarity": 5
+            }
+          ]
+        },
+        {
+          "weapons": [
+            {
+              "name": "望乡",
+              "icon": "",
+              "note": "通行证",
+              "rarity": 6
+            }
+          ],
+          "equipment": [
+            {
+              "name": "碾骨重护甲·贰型",
+              "icon": "",
+              "note": "",
+              "rarity": 5
+            },
+            {
+              "name": "碾骨腕带·壹型",
+              "icon": "",
+              "note": "",
+              "rarity": 5
+            },
+            {
+              "name": "碾骨面具·贰型",
+              "icon": "",
+              "note": "",
+              "rarity": 5
+            },
+            {
+              "name": "纾难印章",
+              "icon": "",
+              "note": "0潜建议",
+              "rarity": 5
+            }
+          ]
+        },
+        {
+          "weapons": [
+            {
+              "name": "楔子",
+              "icon": "",
+              "note": "",
+              "rarity": 6
+            }
+          ],
+          "equipment": [
+            {
+              "name": "碾骨重护甲·贰型",
+              "icon": "",
+              "note": "",
+              "rarity": 5
+            },
+            {
+              "name": "碾骨腕带·壹型",
+              "icon": "",
+              "note": "",
+              "rarity": 5
+            },
+            {
+              "name": "碾骨面具·贰型",
+              "icon": "",
+              "note": "",
+              "rarity": 5
+            },
+            {
+              "name": "碾骨面具·贰型",
+              "icon": "",
+              "note": "4潜建议",
+              "rarity": 5
+            }
+          ]
+        }
+      ],
+      "analysis": "汤汤是一个具有高效挂冰能力和强效对群控制的副C，且本身作为主控操作手感极佳，在非伊冯配队中可以主控。汤汤的输出总量在同练度条件下少于伊冯和别礼，因此除非只有汤汤或汤汤5潜，否则不建议考虑汤汤主C。",
+      "teamTips": "汤汤是目前冰队的最佳副C，目前也基本只适配冰队，因此配队就是典型的冰主C（伊冯/别礼）+汤汤+冰一辅（赛希）+生存/先锋/二辅",
+      "operationTips": "汤汤的攻击基本都是多段hit，因此实际叠暴击很容易（当然这玩意该凹还得凹）。\n汤汤的终结技是目前最强控制，只要可以选中且非无敌就能硬控4秒。实战中注意在终结技临近结束时要不要下落攻击以吃满大招是一个可选项，尤其是伊冯大招在段内打下落稍有不慎就会要重头打，换而言之如果你是个手残，建议不打下落攻击，全队实际总伤可能反而更高。\n汤汤的水龙卷为战技伤害，因此能吃到连击与战机伤害加成，但由于大招生成水龙卷是天赋效果而非战技，因此这个水龙卷吃不到碾骨套效果。",
+      "teamSlots": [
+        {
+          "name": "",
+          "note": "",
+          "options": [
+            {
+              "name": "伊冯",
+              "tag": "主C",
+              "weapons": [
+                {
+                  "name": "艺术暴君",
+                  "icon": "",
+                  "note": "",
+                  "rarity": 6
+                }
+              ],
+              "equipment": [
+                {
+                  "name": "M.I.警用罩衣",
+                  "icon": "",
+                  "note": "",
+                  "rarity": 5
+                },
+                {
+                  "name": "M.I.警用手环",
+                  "icon": "",
+                  "note": "",
+                  "rarity": 5
+                },
+                {
+                  "name": "M.I.警用工具组",
+                  "icon": "",
+                  "note": "",
+                  "rarity": 5
+                },
+                {
+                  "name": "M.I.警用工具组",
+                  "icon": "",
+                  "note": "",
+                  "rarity": 5
+                }
+              ]
+            },
+            {
+              "name": "别礼",
+              "tag": "主C",
+              "weapons": [
+                {
+                  "name": "赫拉芬格",
+                  "icon": "",
+                  "note": "",
+                  "rarity": 6
+                }
+              ],
+              "equipment": [
+                {
+                  "name": "点剑轻装甲",
+                  "icon": "",
+                  "note": "",
+                  "rarity": 5
+                },
+                {
+                  "name": "潮涌手甲",
+                  "icon": "",
+                  "note": "",
+                  "rarity": 5
+                },
+                {
+                  "name": "悬河供氧栓",
+                  "icon": "",
+                  "note": "",
+                  "rarity": 5
+                },
+                {
+                  "name": "悬河供氧栓",
+                  "icon": "",
+                  "note": "",
+                  "rarity": 5
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "",
+          "note": "",
+          "options": [
+            {
+              "name": "汤汤",
+              "tag": "副C",
+              "weapons": [
+                {
+                  "name": "落草",
+                  "icon": "",
+                  "note": "",
+                  "rarity": 6
+                }
+              ],
+              "equipment": [
+                {
+                  "name": "清波重甲",
+                  "icon": "",
+                  "note": "",
+                  "rarity": 5
+                },
+                {
+                  "name": "清波手甲",
+                  "icon": "",
+                  "note": "",
+                  "rarity": 5
+                },
+                {
+                  "name": "清波定位仪",
+                  "icon": "",
+                  "note": "",
+                  "rarity": 5
+                },
+                {
+                  "name": "生物辅助护板",
+                  "icon": "",
+                  "note": "",
+                  "rarity": 5
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "",
+          "note": "",
+          "options": [
+            {
+              "name": "赛希",
+              "tag": "一辅+生存",
+              "weapons": [
+                {
+                  "name": "爆破单元",
+                  "icon": "",
+                  "note": "",
+                  "rarity": 6
+                }
+              ],
+              "equipment": [
+                {
+                  "name": "纾难护甲",
+                  "icon": "",
+                  "note": "",
+                  "rarity": 5
+                },
+                {
+                  "name": "拓荒纤维手套·壹型",
+                  "icon": "",
+                  "note": "",
+                  "rarity": 5
+                },
+                {
+                  "name": "拓荒增量供氧栓·壹型",
+                  "icon": "",
+                  "note": "",
+                  "rarity": 5
+                },
+                {
+                  "name": "拓荒增量供氧栓·壹型",
+                  "icon": "",
+                  "note": "",
+                  "rarity": 5
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "",
+          "note": "",
+          "options": [
+            {
+              "name": "洁尔佩塔",
+              "tag": "二辅",
+              "weapons": [
+                {
+                  "name": "悼亡诗",
+                  "icon": "",
+                  "note": "",
+                  "rarity": 5
+                }
+              ],
+              "equipment": [
+                {
+                  "name": "碾骨披巾·壹型",
+                  "icon": "",
+                  "note": "",
+                  "rarity": 5
+                },
+                {
+                  "name": "长息护手·壹型",
+                  "icon": "",
+                  "note": "",
+                  "rarity": 5
+                },
+                {
+                  "name": "长息辅助臂",
+                  "icon": "",
+                  "note": "",
+                  "rarity": 5
+                },
+                {
+                  "name": "长息辅助臂",
+                  "icon": "",
+                  "note": "",
+                  "rarity": 5
+                }
+              ]
+            },
+            {
+              "name": "阿列什",
+              "tag": "先锋",
+              "weapons": [
+                {
+                  "name": "热熔切割器",
+                  "icon": "",
+                  "note": "",
+                  "rarity": 6
+                }
+              ],
+              "equipment": [
+                {
+                  "name": "纾难护甲",
+                  "icon": "",
+                  "note": "",
+                  "rarity": 5
+                },
+                {
+                  "name": "拓荒纤维手套·壹型",
+                  "icon": "",
+                  "note": "",
+                  "rarity": 5
+                },
+                {
+                  "name": "拓荒增量供氧栓·壹型",
+                  "icon": "",
+                  "note": "",
+                  "rarity": 5
+                },
+                {
+                  "name": "拓荒增量供氧栓·壹型",
+                  "icon": "",
+                  "note": "",
+                  "rarity": 5
+                }
+              ]
+            },
+            {
+              "name": "艾尔黛拉",
+              "tag": "生存",
+              "weapons": [
+                {
+                  "name": "沧溟星梦",
+                  "icon": "",
+                  "note": "",
+                  "rarity": 6
+                }
+              ],
+              "equipment": [
+                {
+                  "name": "长息装甲",
+                  "icon": "",
+                  "note": "",
+                  "rarity": 5
+                },
+                {
+                  "name": "长息护手·壹型",
+                  "icon": "",
+                  "note": "",
+                  "rarity": 5
+                },
+                {
+                  "name": "长息辅助臂",
+                  "icon": "",
+                  "note": "",
+                  "rarity": 5
+                },
+                {
+                  "name": "长息辅助臂",
+                  "icon": "",
+                  "note": "",
+                  "rarity": 5
+                }
+              ]
+            }
+          ]
+        }
+      ],
       "attributions": [
         {
-          "role": "编辑",
+          "role": "数据编辑",
           "name": "璨梦踏月",
           "url": "https://space.bilibili.com/1580942601",
-          "note": ""
+          "note": "仅填写了角色相关数据~"
         },
         {
           "role": "数据来源",
           "name": "华法琳Wiki",
           "url": "https://warfarin.wiki",
           "note": ""
+        },
+        {
+          "role": "编辑",
+          "name": "沈念",
+          "url": "https://space.bilibili.com/661696099",
+          "note": "个人攻略补全喵~结合了血狼、梦轩等大佬的攻略及个人实战体验做的瞄~"
         }
       ]
     }
