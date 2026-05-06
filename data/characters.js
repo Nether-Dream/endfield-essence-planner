@@ -6,7 +6,8 @@
   var characterIds = [
     "tangtang",
     "rossi",
-    "lifeng"
+    "lifeng",
+    "zhuangfangyi"
   ];
 
   characterIds.forEach(function (id) {
