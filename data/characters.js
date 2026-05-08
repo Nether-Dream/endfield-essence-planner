@@ -7,7 +7,8 @@
     "tangtang",
     "rossi",
     "lifeng",
-    "zhuangfangyi"
+    "zhuangfangyi",
+    "gilberta"
   ];
 
   characterIds.forEach(function (id) {
