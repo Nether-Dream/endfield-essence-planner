@@ -8,7 +8,8 @@
     "rossi",
     "lifeng",
     "zhuangfangyi",
-    "gilberta"
+    "gilberta",
+    "laevatain"
   ];
 
   characterIds.forEach(function (id) {
